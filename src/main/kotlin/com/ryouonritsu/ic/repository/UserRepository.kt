@@ -16,7 +16,16 @@ interface UserRepository : JpaRepositoryImplementation<User, Long> {
     fun findByUsername(username: String): User?
     fun findByEmail(email: String): User?
 
-    @Query("SELECT u FROM User u WHERE u.isDeleted = false AND (u.id = ?1 OR u.username LIKE %?1% OR u.realName LIKE %?1%) LIMIT 10")
+    @Query(
+        """
+            SELECT *
+            FROM user
+            WHERE is_deleted = 0
+                AND (id = ?1 OR username LIKE CONCAT('%', ?1, '%') OR real_name LIKE CONCAT('%', ?1, '%'))
+            LIMIT 10
+        """,
+        nativeQuery = true
+    )
     fun findByKeyword(keyword: String): List<User>
 
     @Query("SELECT u FROM User u WHERE u.isDeleted = false ORDER BY u.createTime")
