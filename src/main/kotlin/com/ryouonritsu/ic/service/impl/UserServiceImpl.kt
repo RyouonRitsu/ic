@@ -97,7 +97,7 @@ class UserServiceImpl(
         }
     }
 
-    private fun sendEmail(email: String, subject: String, html: String): Boolean {
+    internal fun sendEmail(email: String, subject: String, html: String): Boolean {
         val account = mailServiceAccount
         val password = mailServicePassword
         val nick = mailServiceNick
@@ -192,7 +192,7 @@ class UserServiceImpl(
         )
     }
 
-    private fun verifyCodeCheck(verifyCode: String?): Pair<Boolean, Response<Unit>?> {
+    internal fun verifyCodeCheck(verifyCode: String?): Pair<Boolean, Response<Unit>?> {
         val vc = redisUtils["verification_code"]
         if (vc.isNullOrBlank()) return Pair(
             false, Response.failure("验证码无效")
