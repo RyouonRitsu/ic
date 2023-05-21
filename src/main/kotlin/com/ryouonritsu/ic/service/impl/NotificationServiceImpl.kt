@@ -14,7 +14,9 @@ import com.ryouonritsu.ic.repository.EventRepository
 import com.ryouonritsu.ic.repository.SubscriberRepository
 import com.ryouonritsu.ic.service.NotificationService
 import org.slf4j.LoggerFactory
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionTemplate
 import java.util.concurrent.TimeUnit
 
 /**
@@ -25,7 +27,9 @@ class NotificationServiceImpl(
     private val redisUtils: RedisUtils,
     private val userServiceImpl: UserServiceImpl,
     private val eventRepository: EventRepository,
-    private val subscriberRepository: SubscriberRepository
+    private val subscriberRepository: SubscriberRepository,
+    private val transactionTemplate: TransactionTemplate,
+    private val asyncTaskExecutor: ThreadPoolTaskExecutor
 ) : NotificationService {
     companion object {
         private val log = LoggerFactory.getLogger(NotificationServiceImpl::class.java)
@@ -39,21 +43,41 @@ class NotificationServiceImpl(
         )
 
         val subscribers = subscriberRepository.findByTag(request.tag)
-        val statuses = mutableListOf<Boolean>()
-        subscribers.forEach {
-            log.info("[publish] sending email to ${it.email}")
-            statuses += userServiceImpl.sendEmail(
-                it.email,
-                "[${event.tag}] ${event.name}",
-                event.message
+        asyncPublish(event, subscribers)
+
+        return Response.success(event.toDTO())
+    }
+
+    private fun asyncPublish(event: Event, subscribers: List<Subscriber>) {
+        transactionTemplate.execute {
+            val f = asyncTaskExecutor.submitListenable {
+                val statuses = mutableListOf<Boolean>()
+                subscribers.forEach {
+                    log.info("[publish] sending email to ${it.email}")
+
+                    // retry at most 3 times
+                    statuses += userServiceImpl.retrySendEmail(
+                        it.email,
+                        "[${event.tag}] ${event.name}",
+                        event.message
+                    )
+                }
+
+                log.info("[publish] send result: $statuses")
+                val published = statuses.any { it }
+                event.status = !published
+                eventRepository.save(event)
+            }
+            f.addCallback(
+                { log.info("[asyncPublish] async publish success!") },
+                {
+                    log.error(
+                        "[asyncPublish] async publish failed, eventId = ${event.id}, subscriberIds = ${subscribers.map { s -> s.id }}",
+                        it
+                    )
+                }
             )
         }
-
-        log.info("[publish] send result: $statuses")
-        val published = statuses.any { it }
-        event.status = !published
-        eventRepository.save(event)
-        return Response.success(event.toDTO())
     }
 
     override fun subscribe(request: SubscribeRequest): Response<SubscriberDTO> {
@@ -73,21 +97,39 @@ class NotificationServiceImpl(
             "您已成功订阅 [${subscriber.tag}] 事件通知"
         )
 
-        val events = eventRepository.findByTagAndStatus(subscriber.tag, true)
-        events.forEach {
-            val published = userServiceImpl.sendEmail(
-                subscriber.email,
-                "[${it.tag}] ${it.name}",
-                it.message
-            )
-            log.info("[subscribe] send result: $published")
-            if (it.status != !published) {
-                it.status = !published
-                eventRepository.save(it)
-            }
-        }
+        asyncSendUnpublishedEvent(subscriber)
 
         return Response.success(subscriber.toDTO())
+    }
+
+    private fun asyncSendUnpublishedEvent(subscriber: Subscriber) {
+        transactionTemplate.execute {
+            val f = asyncTaskExecutor.submitListenable {
+                val events = eventRepository.findByTagAndStatus(subscriber.tag, true)
+                events.forEach {
+                    val published = userServiceImpl.retrySendEmail(
+                        subscriber.email,
+                        "[${it.tag}] ${it.name}",
+                        it.message
+                    )
+                    log.info("[subscribe] send result: $published")
+
+                    if (it.status != !published) {
+                        it.status = !published
+                        eventRepository.save(it)
+                    }
+                }
+            }
+            f.addCallback(
+                { log.info("[asyncSendUnpublishedEvent] async send unpublished event success!") },
+                {
+                    log.error(
+                        "[asyncSendUnpublishedEvent] async send unpublished event failed, subscriberId = ${subscriber.id}",
+                        it
+                    )
+                }
+            )
+        }
     }
 
     override fun unsubscribe(request: UnsubscribeRequest): Response<Unit> {

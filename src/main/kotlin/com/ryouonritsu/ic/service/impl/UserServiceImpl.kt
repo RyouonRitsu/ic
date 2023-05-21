@@ -97,6 +97,22 @@ class UserServiceImpl(
         }
     }
 
+    internal fun retrySendEmail(
+        email: String,
+        subject: String,
+        html: String,
+        times: Int = 3
+    ): Boolean {
+        var success = false
+
+        for (i in 1..times) {
+            success = sendEmail(email, subject, html)
+            if (success) break
+        }
+
+        return success
+    }
+
     internal fun sendEmail(email: String, subject: String, html: String): Boolean {
         val account = mailServiceAccount
         val password = mailServicePassword
