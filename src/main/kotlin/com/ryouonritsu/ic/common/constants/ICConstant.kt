@@ -28,4 +28,9 @@ object ICConstant {
      * 成功
      */
     const val SUCCESS = "success"
+
+    /**
+     * 事件
+     */
+    const val EVENT = "event"
 }
