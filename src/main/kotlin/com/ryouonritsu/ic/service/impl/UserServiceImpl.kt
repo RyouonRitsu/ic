@@ -97,23 +97,7 @@ class UserServiceImpl(
         }
     }
 
-    internal fun retrySendEmail(
-        email: String,
-        subject: String,
-        html: String,
-        times: Int = 3
-    ): Boolean {
-        var success = false
-
-        for (i in 1..times) {
-            success = sendEmail(email, subject, html)
-            if (success) break
-        }
-
-        return success
-    }
-
-    internal fun sendEmail(email: String, subject: String, html: String): Boolean {
+    private fun sendEmail(email: String, subject: String, html: String): Boolean {
         val account = mailServiceAccount
         val password = mailServicePassword
         val nick = mailServiceNick
@@ -208,7 +192,7 @@ class UserServiceImpl(
         )
     }
 
-    internal fun verifyCodeCheck(verifyCode: String?): Pair<Boolean, Response<Unit>?> {
+    private fun verifyCodeCheck(verifyCode: String?): Pair<Boolean, Response<Unit>?> {
         val vc = redisUtils["verification_code"]
         if (vc.isNullOrBlank()) return Pair(
             false, Response.failure("验证码无效")
