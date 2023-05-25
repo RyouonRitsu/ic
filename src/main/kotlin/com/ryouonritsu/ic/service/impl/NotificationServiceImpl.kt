@@ -135,7 +135,7 @@ class NotificationServiceImpl(
     override fun unsubscribe(request: UnsubscribeRequest): Response<Unit> {
         val subscriber = subscriberRepository.findByTagAndEmail(request.tag!!, request.email!!)
             ?: return Response.failure("该邮箱尚未订阅该事件通知")
-        val (success, response) = userServiceImpl.verifyCodeCheck(request.verificationCode)
+        val (success, response) = userServiceImpl.verifyCodeCheck(request.email, request.verificationCode)
         if (!success) return response!!
         subscriber.status = false
         subscriberRepository.save(subscriber)
@@ -154,8 +154,7 @@ class NotificationServiceImpl(
         val verificationCode = (1..6).joinToString("") { "${(0..9).random()}" }
         val success = userServiceImpl.sendEmail(email, "Verification Code", verificationCode)
         return if (success) {
-            redisUtils.set("verification_code", verificationCode, 5, TimeUnit.MINUTES)
-            redisUtils.set("email", email, 5, TimeUnit.MINUTES)
+            redisUtils.set(email, verificationCode, 5, TimeUnit.MINUTES)
             Response.success("验证码已发送")
         } else Response.failure("验证码发送失败")
     }

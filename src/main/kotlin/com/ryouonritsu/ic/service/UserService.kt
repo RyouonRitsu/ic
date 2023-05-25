@@ -50,6 +50,9 @@ interface UserService {
         password: String?
     ): Response<Unit>
 
+    fun addAddress(address: String): Response<Unit>
+    fun deleteAddress(index: Int): Response<Unit>
+
     fun queryHeaders(): Response<List<ColumnDSL>>
     fun list(
         realName: String?,

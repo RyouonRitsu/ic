@@ -20,7 +20,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(value = [ServiceException::class])
     fun serviceExceptionHandler(serviceException: ServiceException): Response<Unit> {
-        log.error("ServiceException occurred: code = ${serviceException.code}, message = ${serviceException.message}")
+        log.error("ServiceException occurred: code = ${serviceException.code}, message = ${serviceException.message}", serviceException)
         return if (serviceException.code != null) Response.failure(
             ExceptionEnum.getByCode(
                 serviceException.code!!
@@ -31,20 +31,20 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(value = [NullPointerException::class])
     fun exceptionHandler(exception: NullPointerException): Response<Unit> {
-        log.error("NullPointerException occurred: ${exception.stackTraceToString()}")
+        log.error("NullPointerException occurred: ${exception.cause}", exception)
         return Response.failure(exception.toString())
     }
 
     @ExceptionHandler(value = [MethodArgumentNotValidException::class])
     fun exceptionHandler(exception: MethodArgumentNotValidException): Response<Map<String, String?>> {
-        log.error("MethodArgumentNotValidException occurred: ${exception.stackTraceToString()}")
-        return Response.failure(ExceptionEnum.BAD_REQUEST, exception.message,
+        log.error("MethodArgumentNotValidException occurred: ${exception.cause}", exception)
+        return Response.failure(ExceptionEnum.BAD_REQUEST, ExceptionEnum.BAD_REQUEST.message,
             exception.bindingResult.allErrors.associate { (it as FieldError).field to it.defaultMessage })
     }
 
     @ExceptionHandler(value = [Exception::class])
     fun exceptionHandler(exception: Exception): Response<Unit> {
-        log.error("UnknownError occurred: ${exception.stackTraceToString()}")
+        log.error("UnknownError occurred: ${exception.cause}", exception)
         return Response.failure(ExceptionEnum.INTERNAL_SERVER_ERROR, exception.toString())
     }
 }

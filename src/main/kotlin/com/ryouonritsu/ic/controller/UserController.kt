@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDateTime
@@ -26,6 +27,7 @@ import javax.validation.constraints.NotNull
 /**
  * @author ryouonritsu
  */
+@Validated
 @RestController
 @RequestMapping("/user")
 @Tag(name = "用户接口")
@@ -176,6 +178,26 @@ class UserController(
         request.isDeleted = null
         return userService.modifyUserInfo(request)
     }
+
+    @ServiceLog(description = "添加收货地址")
+    @PostMapping("/addAddress")
+    @AuthCheck
+    @Tag(name = "用户接口")
+    @Operation(
+        summary = "添加收货地址",
+        description = "添加收货地址到最后一位"
+    )
+    fun addAddress(@RequestBody @Valid request: AddAddressRequest) = userService.addAddress(request.address!!)
+
+    @ServiceLog(description = "删除收货地址")
+    @PostMapping("/deleteAddress")
+    @AuthCheck
+    @Tag(name = "用户接口")
+    @Operation(
+        summary = "删除收货地址",
+        description = "删除指定索引的收货地址"
+    )
+    fun deleteAddress(@RequestBody @Valid request: DeleteAddressRequest) = userService.deleteAddress(request.index!!)
 
     @ServiceLog(description = "修改邮箱")
     @PostMapping("/modifyEmail")

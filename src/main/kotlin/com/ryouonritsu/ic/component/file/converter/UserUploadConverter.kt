@@ -59,7 +59,7 @@ object UserUploadConverter {
             industry = industry,
             position = position
         )
-        val userInfo = UserInfoDTO(schoolInfo, socialInfo)
+        val userInfo = UserInfoDTO(schoolInfo = schoolInfo, socialInfo = socialInfo)
         user.userInfo = userInfo.toJSONString()
         return user
     }

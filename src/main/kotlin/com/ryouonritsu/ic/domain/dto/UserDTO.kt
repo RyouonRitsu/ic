@@ -1,6 +1,7 @@
 package com.ryouonritsu.ic.domain.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -31,6 +32,10 @@ data class UserDTO(
     var educationalBackground: String = "",
     @Schema(description = "简介和主要成就", example = "一名学生", required = true)
     var description: String = "",
+    @Schema(description = "财产", required = true)
+    var property: String = BigDecimal.ZERO.toString(),
+    @Schema(description = "收货地址", required = true)
+    var shippingAddress: List<String> = mutableListOf(),
     @Schema(description = "工作单位", required = true)
     var company: String = "",
     @Schema(description = "所在行业", required = true)

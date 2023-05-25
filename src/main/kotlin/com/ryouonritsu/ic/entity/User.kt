@@ -6,6 +6,7 @@ import com.ryouonritsu.ic.domain.dto.SchoolInfoDTO
 import com.ryouonritsu.ic.domain.dto.SocialInfoDTO
 import com.ryouonritsu.ic.domain.dto.UserDTO
 import com.ryouonritsu.ic.domain.dto.UserInfoDTO
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.*
@@ -64,8 +65,10 @@ class User(
     var educationalBackground: String = "",
     @Column(name = "description", columnDefinition = "TEXT COMMENT '个人简介'")
     var description: String = "",
+    @Column(name = "property", columnDefinition = "DECIMAL(30, 6) DEFAULT '0' COMMENT '财产'", nullable = false)
+    var property: BigDecimal = BigDecimal.ZERO,
     @Column(name = "user_info", columnDefinition = "LONGTEXT COMMENT '用户信息JSON'")
-    var userInfo: String = UserInfoDTO(SchoolInfoDTO(), SocialInfoDTO()).toJSONString(),
+    var userInfo: String = UserInfoDTO(schoolInfo = SchoolInfoDTO(), socialInfo = SocialInfoDTO()).toJSONString(),
     @Column(
         name = "is_admin",
         columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '是否为管理员'",
@@ -119,6 +122,8 @@ class User(
             location = location,
             educationalBackground = educationalBackground,
             description = description,
+            property = property.toString(),
+            shippingAddress = userInfo.shippingAddress,
             company = userInfo.socialInfo.company ?: "",
             industry = userInfo.socialInfo.industry ?: "",
             position = userInfo.socialInfo.position ?: "",

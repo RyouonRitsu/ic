@@ -33,6 +33,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.time.LocalDate
@@ -48,6 +50,7 @@ import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 import javax.persistence.criteria.Predicate
 import kotlin.io.path.Path
+import kotlin.jvm.optionals.getOrElse
 
 /**
  * @author ryouonritsu
@@ -74,6 +77,8 @@ class UserServiceImpl(
     private val mailSmtpPort: String,
     @Value("\${mail.text.change-email}")
     private val mailTextChangeEmail: String,
+    @Value("\${mail.text.change-email.notice}")
+    private val mailTextChangeEmailNotice: String,
     @Value("\${mail.text.register}")
     private val mailTextRegister: String,
     @Value("\${mail.text.forget-password}")
@@ -184,8 +189,7 @@ class UserServiceImpl(
         val (code, html) = getHtml("http://localhost:8090/$template?verification_code=$verificationCode")
         val success = if (code == 200 && html != null) sendEmail(email, subject, html) else false
         return if (success) {
-            redisUtils.set("verification_code", verificationCode, 5, TimeUnit.MINUTES)
-            redisUtils.set("email", email, 5, TimeUnit.MINUTES)
+            redisUtils.set(email, verificationCode, 5, TimeUnit.MINUTES)
             Response.success("验证码已发送")
         } else Response.failure("验证码发送失败")
     }
@@ -208,18 +212,18 @@ class UserServiceImpl(
         )
     }
 
-    internal fun verifyCodeCheck(verifyCode: String?): Pair<Boolean, Response<Unit>?> {
-        val vc = redisUtils["verification_code"]
+    internal fun verifyCodeCheck(email: String, verifyCode: String?): Pair<Boolean, Response<Unit>?> {
+        val vc = redisUtils[email]
         if (vc.isNullOrBlank()) return Pair(
             false, Response.failure("验证码无效")
         )
         if (verifyCode != vc) return Pair(
             false, Response.failure("验证码错误, 请再试一次")
         )
-        redisUtils - "verification_code"
         return Pair(true, null)
     }
 
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun register(
         email: String?,
         verificationCode: String?,
@@ -239,9 +243,9 @@ class UserServiceImpl(
         val t = userRepository.findByEmail(email)
         if (t != null) return Response.failure("该邮箱已被注册")
         return runCatching {
-            val (re, msg) = verifyCodeCheck(verificationCode)
+            val (re, msg) = verifyCodeCheck(email, verificationCode)
             if (!re && msg != null) return@runCatching msg
-            if (redisUtils["email"] != email) return Response.failure("该邮箱与验证邮箱不匹配")
+            if (redisUtils[email].isNullOrBlank()) return Response.failure("该邮箱与验证邮箱不匹配")
             val temp = userRepository.findByUsername(username)
             if (temp != null) return Response.failure("用户名已存在")
             if (password1 != password2) return Response.failure("两次输入的密码不一致")
@@ -324,6 +328,7 @@ class UserServiceImpl(
         )
     }
 
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun changePassword(
         mode: Int?,
         oldPassword: String?,
@@ -334,16 +339,16 @@ class UserServiceImpl(
     ): Response<Unit> {
         when (mode) {
             0 -> {
-                val (result, message) = verifyCodeCheck(verifyCode)
+                val (re, msg) = emailCheck(email)
+                if (!re && msg != null) return msg
+                val (result, message) = verifyCodeCheck(email!!, verifyCode)
                 if (!result && message != null) return message
                 if (password1.isNullOrBlank() || password2.isNullOrBlank()) return Response.failure(
                     "密码不能为空"
                 )
                 if (password1 != password2) return Response.failure("两次密码不一致")
-                val (re, msg) = emailCheck(email)
-                if (!re && msg != null) return msg
                 return runCatching {
-                    val user = userRepository.findByEmail(email!!)
+                    val user = userRepository.findByEmail(email)
                         ?: return Response.failure("该邮箱未被注册, 发生意外错误, 请检查数据库")
                     user.password = MD5Util.encode(password1)
                     userRepository.save(user)
@@ -384,6 +389,7 @@ class UserServiceImpl(
         }
     }
 
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun uploadFile(
         file: MultipartFile
     ): Response<List<Map<String, String>>> {
@@ -417,6 +423,7 @@ class UserServiceImpl(
             .getOrDefault(Response.failure("上传失败, 发生意外错误"))
     }
 
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun deleteFile(url: String): Response<Unit> {
         return try {
             val file = userFileRepository.findByUrl(url) ?: return Response.failure(
@@ -431,6 +438,7 @@ class UserServiceImpl(
         }
     }
 
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun modifyUserInfo(request: ModifyUserInfoRequest): Response<Unit> {
         return runCatching {
             val user = userRepository.findById(request.id ?: RequestContext.userId.get()!!).get()
@@ -488,6 +496,7 @@ class UserServiceImpl(
         }.getOrDefault(Response.failure("修改失败, 发生意外错误"))
     }
 
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun modifyEmail(
         email: String?,
         verifyCode: String?,
@@ -499,15 +508,15 @@ class UserServiceImpl(
             if (!result && message != null) return message
             val t = userRepository.findByEmail(email!!)
             if (t != null) return Response.failure("该邮箱已被注册")
-            val (re, msg) = verifyCodeCheck(verifyCode)
+            val (re, msg) = verifyCodeCheck(email, verifyCode)
             if (!re && msg != null) return@runCatching msg
-            if (redisUtils["email"] != email) return Response.failure("该邮箱与验证邮箱不匹配")
+            if (redisUtils[email].isNullOrBlank()) return Response.failure("该邮箱与验证邮箱不匹配")
             if (MD5Util.encode(password) != user.password) return Response.failure("密码错误")
             val (code, html) = getHtml("http://localhost:8090/change_email?email=${email}")
             val success =
                 if (code == 200 && html != null) sendEmail(
                     user.email,
-                    "BUAA校友信息收集邮箱修改通知",
+                    mailTextChangeEmailNotice,
                     html
                 ) else false
             if (!success) throw Exception("邮件发送失败")
@@ -522,6 +531,33 @@ class UserServiceImpl(
             if (it.message != null) return Response.failure("${it.message}")
             else log.error(it.stackTraceToString())
         }.getOrDefault(Response.failure("修改失败, 发生意外错误"))
+    }
+
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun addAddress(address: String): Response<Unit> {
+        val user = userRepository.findById(RequestContext.userId.get()!!).getOrElse {
+            redisUtils - "${RequestContext.userId.get()}"
+            return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+        }
+        val userInfo = user.userInfo.to<UserInfoDTO>()
+        userInfo.shippingAddress += address
+        user.userInfo = userInfo.toJSONString()
+        userRepository.save(user)
+        return Response.success("添加成功")
+    }
+
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun deleteAddress(index: Int): Response<Unit> {
+        val user = userRepository.findById(RequestContext.userId.get()!!).getOrElse {
+            redisUtils - "${RequestContext.userId.get()}"
+            return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+        }
+        val userInfo = user.userInfo.to<UserInfoDTO>()
+        if (index !in userInfo.shippingAddress.indices) return Response.failure("索引超出范围")
+        userInfo.shippingAddress.removeAt(index)
+        user.userInfo = userInfo.toJSONString()
+        userRepository.save(user)
+        return Response.success("删除成功")
     }
 
     override fun queryHeaders(): Response<List<ColumnDSL>> {
@@ -551,7 +587,7 @@ class UserServiceImpl(
         val specification = Specification<User> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
             if (!realName.isNullOrBlank()) {
-                predicates += cb.like(root.get("realName"), "%$realName%")
+                predicates += cb.like(root["realName"], "%$realName%")
             }
             if (!gender.isNullOrBlank()) {
                 val g = User.Gender.getByDesc(gender).code
@@ -562,28 +598,28 @@ class UserServiceImpl(
                 predicates += cb.equal(root.get<LocalDate>("birthday"), b)
             }
             if (!location.isNullOrBlank()) {
-                predicates += cb.like(root.get("location"), "%$location%")
+                predicates += cb.like(root["location"], "%$location%")
             }
             if (!studentId.isNullOrBlank()) {
-                predicates += cb.like(root.get("userInfo"), "%\"studentId\":\"$studentId\"%")
+                predicates += cb.like(root["userInfo"], "%\"studentId\":\"$studentId\"%")
             }
             if (!classId.isNullOrBlank()) {
-                predicates += cb.like(root.get("userInfo"), "%\"classId\":\"$classId\"%")
+                predicates += cb.like(root["userInfo"], "%\"classId\":\"$classId\"%")
             }
             if (!admissionYear.isNullOrBlank()) {
-                predicates += cb.like(root.get("userInfo"), "%\"admissionYear\":\"$admissionYear\"%")
+                predicates += cb.like(root["userInfo"], "%\"admissionYear\":\"$admissionYear\"%")
             }
             if (!graduationYear.isNullOrBlank()) {
-                predicates += cb.like(root.get("userInfo"), "%\"graduationYear\":\"$graduationYear\"%")
+                predicates += cb.like(root["userInfo"], "%\"graduationYear\":\"$graduationYear\"%")
             }
             if (!college.isNullOrBlank()) {
-                predicates += cb.like(root.get("userInfo"), "%\"college\":\"$college\"%")
+                predicates += cb.like(root["userInfo"], "%\"college\":\"$college\"%")
             }
             if (!industry.isNullOrBlank()) {
-                predicates += cb.like(root.get("userInfo"), "%\"industry\":\"$industry\"%")
+                predicates += cb.like(root["userInfo"], "%\"industry\":\"$industry\"%")
             }
             if (!company.isNullOrBlank()) {
-                predicates += cb.like(root.get("userInfo"), "%\"company\":\"$company\"%")
+                predicates += cb.like(root["userInfo"], "%\"company\":\"$company\"%")
             }
             predicates += cb.equal(root.get<Boolean>("isDeleted"), false)
             query.where(*predicates.toTypedArray()).restriction
@@ -615,7 +651,7 @@ class UserServiceImpl(
             studentId = "12345678",
             admissionYear = "2014",
             graduationYear = "2018",
-            userInfo = UserInfoDTO(SchoolInfoDTO(), SocialInfoDTO())
+            userInfo = UserInfoDTO(schoolInfo = SchoolInfoDTO(), socialInfo = SocialInfoDTO())
         )
         return XSSFWorkbook().getTemplate(excelSheetDefinitions, listOf(user))
     }
@@ -629,6 +665,7 @@ class UserServiceImpl(
         return templates[ICConstant.INT_0].templateInfo.parseArray<ExcelSheetDefinition>()
     }
 
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun upload(file: MultipartFile): Response<Unit> {
         val excelSheetDefinitions = getExcelSheetDefinitions()
         val users = file.read(excelSheetDefinitions, UserUploadConverter::convert)
