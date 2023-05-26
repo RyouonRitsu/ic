@@ -6,7 +6,6 @@ import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.utils.DownloadUtils
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
-import com.ryouonritsu.ic.component.log
 import com.ryouonritsu.ic.domain.protocol.request.*
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.service.UserService
@@ -14,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
@@ -35,6 +35,10 @@ class UserController(
     private val userService: UserService,
     private val redisUtils: RedisUtils
 ) {
+    companion object {
+        private val log = LoggerFactory.getLogger(UserController::class.java)
+    }
+
     @ServiceLog(description = "发送注册验证码")
     @PostMapping("/sendRegistrationVerificationCode")
     @Tag(name = "用户接口")
@@ -48,7 +52,7 @@ class UserController(
     @ServiceLog(description = "用户注册")
     @PostMapping("/register")
     @Tag(name = "用户接口")
-    @Operation(summary = "用户注册", description = "除了真实姓名其余必填")
+    @Operation(summary = "用户注册", description = "除了真实姓名和头像地址其余必填")
     fun register(@RequestBody request: RegisterRequest) = userService.register(
         request.email,
         request.verificationCode,
@@ -249,11 +253,11 @@ class UserController(
         @RequestParam("page") @Parameter(
             description = "页码, 从1开始",
             required = true
-        ) @Valid @Min(1) page: Int = 1,
+        ) @Valid @NotNull @Min(1) page: Int = 1,
         @RequestParam("limit") @Parameter(
             description = "每页数量, 大于0",
             required = true
-        ) @Valid @Min(1) limit: Int = 10
+        ) @Valid @NotNull @Min(1) limit: Int = 10
     ) = userService.list(
         realName,
         gender,
@@ -322,7 +326,7 @@ class UserController(
         summary = "管理员上传用户信息",
         description = "管理员上传用户信息"
     )
-    fun upload(@Valid request: UserUploadRequest): Response<Unit> {
+    fun upload(@RequestBody @Valid request: UserUploadRequest): Response<Unit> {
         return userService.upload(request.file!!)
     }
 

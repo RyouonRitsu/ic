@@ -1,9 +1,7 @@
 package com.ryouonritsu.ic.service.impl
 
-import com.alibaba.fastjson2.parseArray
 import com.alibaba.fastjson2.to
 import com.alibaba.fastjson2.toJSONString
-import com.ryouonritsu.ic.common.constants.ICConstant
 import com.ryouonritsu.ic.common.constants.TemplateType
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
@@ -24,6 +22,7 @@ import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.User
 import com.ryouonritsu.ic.entity.UserFile
 import com.ryouonritsu.ic.repository.*
+import com.ryouonritsu.ic.service.TableTemplateService
 import com.ryouonritsu.ic.service.UserService
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -60,7 +59,7 @@ class UserServiceImpl(
     private val redisUtils: RedisUtils,
     private val userRepository: UserRepository,
     private val userFileRepository: UserFileRepository,
-    private val tableTemplateRepository: TableTemplateRepository,
+    private val tableTemplateService: TableTemplateService,
     @Value("\${static.file.prefix}")
     private val staticFilePrefix: String,
     @Value("\${mail.service.account}")
@@ -561,12 +560,7 @@ class UserServiceImpl(
     }
 
     override fun queryHeaders(): Response<List<ColumnDSL>> {
-        val templates = tableTemplateRepository.findByTemplateType(TemplateType.USER_LIST_TEMPLATE)
-        if (templates.isEmpty()) {
-            log.error("[UserServiceImpl.queryHeaders] 没有用户列表模板")
-            return Response.failure(ExceptionEnum.TEMPLATE_NOT_EXIST)
-        }
-        return Response.success(templates[ICConstant.INT_0].templateInfo.parseArray<ColumnDSL>())
+        return Response.success(tableTemplateService.queryHeaders(TemplateType.USER_LIST_TEMPLATE))
     }
 
     override fun list(
@@ -656,13 +650,8 @@ class UserServiceImpl(
         return XSSFWorkbook().getTemplate(excelSheetDefinitions, listOf(user))
     }
 
-    private fun getExcelSheetDefinitions(): MutableList<ExcelSheetDefinition> {
-        val templates = tableTemplateRepository.findByTemplateType(TemplateType.USER_UPLOAD_TEMPLATE)
-        if (templates.isEmpty()) {
-            log.error("[UserServiceImpl.downloadTemplate] 没有用户上传模板")
-            throw ServiceException(ExceptionEnum.TEMPLATE_NOT_EXIST)
-        }
-        return templates[ICConstant.INT_0].templateInfo.parseArray<ExcelSheetDefinition>()
+    private fun getExcelSheetDefinitions(): List<ExcelSheetDefinition> {
+        return tableTemplateService.queryExcelSheetDefinitions(TemplateType.USER_UPLOAD_TEMPLATE)
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)

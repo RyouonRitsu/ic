@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.util.ReflectionUtils
 import org.springframework.web.multipart.MultipartFile
 
-val log: Logger = LoggerFactory.getLogger("TemplateProcessor")
+private val log: Logger = LoggerFactory.getLogger("TemplateProcessor")
 
 /**
  * @author ryouonritsu

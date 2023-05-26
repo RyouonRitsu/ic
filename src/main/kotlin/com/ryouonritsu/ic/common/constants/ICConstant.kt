@@ -10,14 +10,34 @@ object ICConstant {
     const val INT_0 = 0
 
     /**
+     * Int型1
+     */
+    const val INT_1 = 1
+
+    /**
+     * Int型40000
+     */
+    const val INT_40000 = 40000
+
+    /**
      * Long型-1
      */
     const val LONG_MINUS_1 = -1L
 
     /**
+     * Long型0
+     */
+    const val LONG_0 = 0L
+
+    /**
      * 空字符串
      */
     const val EMPTY_STR = ""
+
+    /**
+     * 字串0
+     */
+    const val STR_0 = "0"
 
     /**
      * 字符串中划线

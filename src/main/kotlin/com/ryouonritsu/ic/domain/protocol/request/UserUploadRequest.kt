@@ -11,7 +11,7 @@ import javax.validation.constraints.NotNull
 @Schema(description = "用户上传请求")
 data class UserUploadRequest(
     @field:JsonIgnore
-    @NotNull
+    @field:NotNull
     @Schema(description = "Excel文件", required = true)
     val file: MultipartFile?
 )
