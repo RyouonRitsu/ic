@@ -2,11 +2,13 @@ package com.ryouonritsu.ic.controller
 
 import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.annotation.ServiceLog
+import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.enums.GoodsSortField
 import com.ryouonritsu.ic.common.utils.DownloadUtils
 import com.ryouonritsu.ic.domain.protocol.request.DeleteRequest
 import com.ryouonritsu.ic.domain.protocol.request.ModifyGoodsRequest
 import com.ryouonritsu.ic.domain.protocol.request.UserUploadRequest
+import com.ryouonritsu.ic.entity.Goods
 import com.ryouonritsu.ic.service.GoodsService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -59,7 +61,8 @@ class GoodsController(
     @AuthCheck
     @Tag(name = "商品接口")
     @Operation(summary = "商品上传", description = "商品上传")
-    fun upload(@RequestBody @Valid request: UserUploadRequest) = goodsService.upload(request.file!!)
+    fun upload(@ModelAttribute @Valid request: UserUploadRequest) =
+        goodsService.upload(request.file!!)
 
     @ServiceLog(description = "根据Id查询商品")
     @GetMapping("/findById")
@@ -77,16 +80,18 @@ class GoodsController(
     fun list(
         @RequestParam(required = false) @Parameter(description = "关键词") keyword: String?,
         @RequestParam(required = false) @Parameter(description = "类型") type: String?,
-        @RequestParam(required = false) @Parameter(description = "状态") state: Int?,
+        @RequestParam(required = false) @Parameter(description = "状态") state: Goods.State?,
         @RequestParam(required = false) @Parameter(description = "价格下限") priceFloor: BigDecimal?,
         @RequestParam(required = false) @Parameter(description = "价格上限") priceCeil: BigDecimal?,
-        @RequestParam(required = false) @Parameter(description = "排序字段")
-        sortField: GoodsSortField = GoodsSortField.VIEW_CNT_DESC,
+        @RequestParam(
+            required = false,
+            defaultValue = "VIEW_CNT_DESC"
+        ) @Parameter(description = "排序字段") sortField: GoodsSortField,
         @RequestParam @Parameter(description = "页数, 从1开始", required = true)
-        @Valid @NotNull @Min(1) page: Int = 1,
+        @Valid @NotNull @Min(1) page: Int?,
         @RequestParam @Parameter(description = "每页数量", required = true)
-        @Valid @NotNull @Min(1) limit: Int = 10
-    ) = goodsService.list(keyword, type, state, priceFloor, priceCeil, sortField, page, limit)
+        @Valid @NotNull @Min(1) limit: Int?
+    ) = goodsService.list(keyword, type, state, priceFloor, priceCeil, sortField, page!!, limit!!)
 
     @ServiceLog(description = "商品查询结果下载")
     @GetMapping("/download")
@@ -96,12 +101,22 @@ class GoodsController(
     fun download(
         @RequestParam(required = false) @Parameter(description = "关键词") keyword: String?,
         @RequestParam(required = false) @Parameter(description = "类型") type: String?,
-        @RequestParam(required = false) @Parameter(description = "状态") state: Int?,
+        @RequestParam(required = false) @Parameter(description = "状态") state: Goods.State?,
         @RequestParam(required = false) @Parameter(description = "价格下限") priceFloor: BigDecimal?,
         @RequestParam(required = false) @Parameter(description = "价格上限") priceCeil: BigDecimal?,
-        @RequestParam(required = false) @Parameter(description = "排序字段")
-        sortField: GoodsSortField = GoodsSortField.VIEW_CNT_DESC,
+        @RequestParam(
+            required = false,
+            defaultValue = "VIEW_CNT_DESC"
+        ) @Parameter(description = "排序字段") sortField: GoodsSortField,
     ) = goodsService.download(keyword, type, state, priceFloor, priceCeil, sortField)
+
+    @ServiceLog(description = "管理员编辑商品状态")
+    @PostMapping("/adminModifyState")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
+    @Tag(name = "商品接口")
+    @Operation(summary = "管理员编辑商品状态", description = "只有商品状态会发生改变")
+    fun adminModifyState(@RequestBody @Valid request: ModifyGoodsRequest) =
+        goodsService.adminModifyState(request)
 
     @ServiceLog(description = "商品编辑")
     @PostMapping("/modify")

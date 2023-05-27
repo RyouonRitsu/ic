@@ -28,7 +28,9 @@ enum class ExceptionEnum(
     TEMPLATE_NOT_EXIST("10006", "template does not exist"),
     COLUMN_NAME_IS_INVALID("10007", "column name is invalid"),
     FIELD_NOT_FOUND("10008", "field not found"),
-    DATA_TYPE_IS_INVALID("10009", "data type is invalid");
+    DATA_TYPE_IS_INVALID("10009", "data type is invalid"),
+    INSUFFICIENT_BALANCE("10010", "insufficient balance"),
+    INSUFFICIENT_AMOUNT("10011", "insufficient amount");
 
     companion object {
         fun getByCode(code: String) = values().first { it.code == code }

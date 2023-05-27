@@ -35,40 +35,30 @@ class User(
     )
     var realName: String = "",
     @Column(
-        name = "gender",
         columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '性别, 0保密, 1男, 2女'",
         nullable = false
     )
     var gender: Int = 0,
-    @Column(
-        name = "birthday",
-        columnDefinition = "DATE DEFAULT '1900-01-01' COMMENT '生日'",
-        nullable = false
-    )
+    @Column(columnDefinition = "DATE DEFAULT '1900-01-01' COMMENT '生日'", nullable = false)
     var birthday: LocalDate = LocalDate.of(1900, 1, 1),
-    @Column(
-        name = "phone",
-        columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '联系方式'",
-        nullable = false
-    )
+    @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '联系方式'", nullable = false)
     var phone: String = "",
-    @Column(
-        name = "location",
-        columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '所在地'",
-        nullable = false
-    )
+    @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '所在地'", nullable = false)
     var location: String = "",
     @Column(
         name = "educational_background",
         columnDefinition = "TEXT COMMENT '教育背景'"
     )
     var educationalBackground: String = "",
-    @Column(name = "description", columnDefinition = "TEXT COMMENT '个人简介'")
+    @Column(columnDefinition = "TEXT COMMENT '个人简介'")
     var description: String = "",
-    @Column(name = "property", columnDefinition = "DECIMAL(30, 6) DEFAULT '0' COMMENT '财产'", nullable = false)
+    @Column(columnDefinition = "DECIMAL(30, 6) DEFAULT '0' COMMENT '财产'", nullable = false)
     var property: BigDecimal = BigDecimal.ZERO,
     @Column(name = "user_info", columnDefinition = "LONGTEXT COMMENT '用户信息JSON'")
-    var userInfo: String = UserInfoDTO(schoolInfo = SchoolInfoDTO(), socialInfo = SocialInfoDTO()).toJSONString(),
+    var userInfo: String = UserInfoDTO(
+        schoolInfo = SchoolInfoDTO(),
+        socialInfo = SocialInfoDTO()
+    ).toJSONString(),
     @Column(
         name = "is_admin",
         columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '是否为管理员'",

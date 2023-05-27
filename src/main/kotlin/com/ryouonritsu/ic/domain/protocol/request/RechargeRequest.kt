@@ -1,16 +1,17 @@
 package com.ryouonritsu.ic.domain.protocol.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import java.math.BigDecimal
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotNull
 
 /**
  * @author ryouonritsu
  */
-@Schema(description = "删除收货地址请求")
-data class DeleteAddressRequest(
+@Schema(description = "充值请求")
+data class RechargeRequest(
     @field:NotNull
     @field:Min(0)
-    @Schema(description = "收货地址索引", required = true)
-    val index: Int?,
+    @Schema(description = "金额", required = true)
+    val value: BigDecimal?
 )

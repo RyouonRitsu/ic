@@ -5,6 +5,7 @@ import com.ryouonritsu.ic.domain.dto.GoodsDTO
 import com.ryouonritsu.ic.domain.protocol.request.ModifyGoodsRequest
 import com.ryouonritsu.ic.domain.protocol.response.ListGoodsResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
+import com.ryouonritsu.ic.entity.Goods
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.springframework.web.multipart.MultipartFile
 import java.math.BigDecimal
@@ -19,7 +20,7 @@ interface GoodsService {
     fun list(
         keyword: String?,
         type: String?,
-        state: Int?,
+        state: Goods.State?,
         priceFloor: BigDecimal?,
         priceCeil: BigDecimal?,
         sortField: GoodsSortField,
@@ -30,12 +31,13 @@ interface GoodsService {
     fun download(
         keyword: String?,
         type: String?,
-        state: Int?,
+        state: Goods.State?,
         priceFloor: BigDecimal?,
         priceCeil: BigDecimal?,
         sortField: GoodsSortField
     ): Response<Unit>
 
+    fun adminModifyState(request: ModifyGoodsRequest): Response<Unit>
     fun modify(request: ModifyGoodsRequest): Response<Unit>
     fun delete(id: Long): Response<Unit>
 }

@@ -98,7 +98,7 @@ class GoodsServiceImpl(
     override fun list(
         keyword: String?,
         type: String?,
-        state: Int?,
+        state: Goods.State?,
         priceFloor: BigDecimal?,
         priceCeil: BigDecimal?,
         sortField: GoodsSortField,
@@ -109,14 +109,14 @@ class GoodsServiceImpl(
             val predicates = mutableListOf<Predicate>()
             if (!keyword.isNullOrBlank())
                 predicates += cb.or(
-                    cb.like(root["name"], keyword),
-                    cb.like(root["type"], keyword),
-                    cb.like(root["description"], keyword)
+                    cb.like(root["name"], "%$keyword%"),
+                    cb.like(root["type"], "%$keyword%"),
+                    cb.like(root["description"], "%$keyword%")
                 )
             if (!type.isNullOrBlank())
-                predicates += cb.like(root["type"], type)
+                predicates += cb.like(root["type"], "%$type%")
             if (state != null)
-                predicates += cb.equal(root.get<Int>("state"), state)
+                predicates += cb.equal(root.get<Int>("state"), state.code)
             if (priceFloor != null)
                 predicates += cb.ge(
                     cb.prod(root["price"], root["discount"]),
@@ -152,7 +152,7 @@ class GoodsServiceImpl(
     override fun download(
         keyword: String?,
         type: String?,
-        state: Int?,
+        state: Goods.State?,
         priceFloor: BigDecimal?,
         priceCeil: BigDecimal?,
         sortField: GoodsSortField
@@ -164,15 +164,25 @@ class GoodsServiceImpl(
         return Response.success("下载任务已提交, 若下载成功会将下载链接以邮件形式发送到您的邮箱")
     }
 
+    override fun adminModifyState(request: ModifyGoodsRequest): Response<Unit> {
+        val goods = goodsRepository.findById(request.id!!).getOrElse {
+            throw ServiceException(ExceptionEnum.NOT_FOUND)
+        }
+        if (request.state != null) goods.state = request.state.code
+        transactionTemplate.execute { goodsRepository.save(goods) }
+        return Response.success()
+    }
+
     override fun modify(request: ModifyGoodsRequest): Response<Unit> {
-        val goods = goodsRepository.findById(request.id).getOrElse {
+        val goods = goodsRepository.findById(request.id!!).getOrElse {
             throw ServiceException(ExceptionEnum.NOT_FOUND)
         }
         if (!request.name.isNullOrBlank()) goods.name = request.name
         if (!request.picture.isNullOrBlank()) goods.picture = request.picture
         if (!request.type.isNullOrBlank()) goods.type = request.type
         if (request.amount != null) goods.amount = request.amount
-        if (request.state != null) goods.state = request.state.code
+        if (goods.state != Goods.State.UNDER_REVIEW.code && request.state != null)
+            goods.state = request.state.code
         if (request.price != null) goods.price = request.price
         if (request.discount != null) goods.discount = request.discount
         if (!request.description.isNullOrBlank()) goods.description = request.description

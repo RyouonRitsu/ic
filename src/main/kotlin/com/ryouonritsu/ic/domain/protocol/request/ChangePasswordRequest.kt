@@ -1,6 +1,7 @@
 package com.ryouonritsu.ic.domain.protocol.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import javax.validation.constraints.NotBlank
 
 /**
  * @author ryouonritsu
@@ -9,8 +10,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class ChangePasswordRequest(
     @Schema(description = "旧密码")
     val oldPassword: String?,
+    @field:NotBlank
     @Schema(description = "新密码", required = true)
     val password1: String?,
+    @field:NotBlank
     @Schema(description = "确认新密码", required = true)
     val password2: String?,
     @Schema(description = "邮箱")

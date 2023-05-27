@@ -1,16 +1,23 @@
 package com.ryouonritsu.ic.component
 
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_184
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_256
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_65280
 import com.ryouonritsu.ic.common.enums.DataTypeEnum
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.component.file.ExcelSheetDefinition
 import org.apache.poi.ss.usermodel.BorderStyle
 import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.xssf.usermodel.XSSFCellStyle
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.util.ReflectionUtils
 import org.springframework.web.multipart.MultipartFile
+import kotlin.math.max
+import kotlin.math.min
 
 private val log: Logger = LoggerFactory.getLogger("TemplateProcessor")
 
@@ -23,6 +30,7 @@ fun <T> XSSFWorkbook.process(
     sheetName: String? = null
 ): XSSFWorkbook {
     val sheet = if (sheetName != null) this.createSheet(sheetName) else this.createSheet()
+    val maxSizeMapping = mutableMapOf<Int, Int>()
 
     val headerRow = sheet.createRow(0)
     columnDefinitions.forEachIndexed { index, columnDSL ->
@@ -36,7 +44,14 @@ fun <T> XSSFWorkbook.process(
                 borderRight = BorderStyle.THIN
             }
         cell.setCellValue(columnDSL.defaultTitle)
+
+        maxSizeMapping[index] = max(
+            maxSizeMapping[index] ?: INT_0,
+            columnDSL.defaultTitle?.toByteArray()?.size ?: INT_0
+        )
     }
+
+    val styleMap = mutableMapOf<Int, XSSFCellStyle>()
 
     data.forEachIndexed { index, t ->
         val row = sheet.createRow(index + 1)
@@ -44,12 +59,11 @@ fun <T> XSSFWorkbook.process(
             val field = ReflectionUtils.findField(t!!::class.java, columnDSL.columnName ?: run {
                 log.error("[TemplateProcessor::XSSFWorkbook.process] Column name is null")
                 throw ServiceException(ExceptionEnum.COLUMN_NAME_IS_INVALID)
-            })
+            })?.apply { ReflectionUtils.makeAccessible(this) }
             if (field == null) {
                 log.error("[TemplateProcessor::XSSFWorkbook.process] Field not found: ${columnDSL.columnName}")
                 throw ServiceException(ExceptionEnum.FIELD_NOT_FOUND)
             }
-            ReflectionUtils.makeAccessible(field)
             val value = ReflectionUtils.getField(field, t)
             val cell = row.createCell(id)
             when (DataTypeEnum.getByType(columnDSL.dataType ?: run {
@@ -59,15 +73,25 @@ fun <T> XSSFWorkbook.process(
                 DataTypeEnum.NUMBER -> cell.setCellValue(value.toString().toDouble())
                 DataTypeEnum.STRING -> cell.setCellValue(value.toString())
             }
-            cell.cellStyle = this.createCellStyle()
-                .apply {
+            maxSizeMapping[id] =
+                max(maxSizeMapping[id] ?: INT_0, value?.toString()?.toByteArray()?.size ?: INT_0)
+            val style by lazy {
+                this.createCellStyle().apply {
                     borderTop = BorderStyle.THIN
                     borderBottom = BorderStyle.THIN
                     borderLeft = BorderStyle.THIN
                     borderRight = BorderStyle.THIN
                 }
+            }
+            cell.cellStyle = if (index == INT_0) {
+                styleMap[id] = style
+                style
+            } else styleMap[index] ?: style
         }
-        row.forEachIndexed { id, _ -> sheet.autoSizeColumn(id) }
+    }
+
+    maxSizeMapping.forEach { (k, v) ->
+        sheet.setColumnWidth(k, min(v * INT_256 + INT_184, INT_65280))
     }
 
     return this
