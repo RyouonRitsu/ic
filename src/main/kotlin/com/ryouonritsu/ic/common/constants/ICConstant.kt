@@ -15,9 +15,34 @@ object ICConstant {
     const val INT_1 = 1
 
     /**
+     * Int型2
+     */
+    const val INT_2 = 2
+
+    /**
+     * Int型3
+     */
+    const val INT_3 = 3
+
+    /**
+     * Int型256
+     */
+    const val INT_256 = 256
+
+    /**
+     * Int型184
+     */
+    const val INT_184 = 184
+
+    /**
      * Int型40000
      */
     const val INT_40000 = 40000
+
+    /**
+     * Int型65280
+     */
+    const val INT_65280 = 65280
 
     /**
      * Long型-1

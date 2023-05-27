@@ -37,7 +37,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -394,11 +393,10 @@ class UserServiceImpl(
     ): Response<List<Map<String, String>>> {
         return runCatching {
             if (file.size >= 10 * 1024 * 1024) return Response.failure("上传失败, 文件大小超过最大限制10MB！")
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss.SSS_")
-            val time = LocalDateTime.now().format(formatter)
+            val time = System.currentTimeMillis()
             val userId = RequestContext.userId.get()
             val fileDir = "static/file/${userId}"
-            val fileName = time + file.originalFilename
+            val fileName = "${time}_${file.originalFilename}"
             val filePath = "$fileDir/$fileName"
             if (!File(fileDir).exists()) File(fileDir).mkdirs()
             file.transferTo(Path(filePath))

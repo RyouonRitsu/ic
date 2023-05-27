@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDateTime
 import java.util.*
 import javax.validation.Valid
@@ -151,12 +150,8 @@ class UserController(
         summary = "上传文件",
         description = "将用户上传的文件保存在静态文件目录static/file/\${user_id}/\${file_name}下"
     )
-    fun uploadFile(
-        @RequestParam @Parameter(
-            description = "文件",
-            required = true
-        ) file: MultipartFile
-    ) = userService.uploadFile(file)
+    fun uploadFile(@ModelAttribute @Valid request: UserUploadRequest) =
+        userService.uploadFile(request.file!!)
 
     @ServiceLog(description = "删除文件")
     @PostMapping("/deleteFile")
@@ -166,7 +161,7 @@ class UserController(
         summary = "删除文件",
         description = "删除用户上传的文件, 使分享链接失效"
     )
-    fun deleteFile(@RequestBody request: DeleteFileRequest) = userService.deleteFile(request.url)
+    fun deleteFile(@RequestBody request: DeleteFileRequest) = userService.deleteFile(request.url!!)
 
     @ServiceLog(description = "修改用户信息")
     @PostMapping("/modifyUserInfo")
@@ -191,7 +186,8 @@ class UserController(
         summary = "添加收货地址",
         description = "添加收货地址到最后一位"
     )
-    fun addAddress(@RequestBody @Valid request: AddAddressRequest) = userService.addAddress(request.address!!)
+    fun addAddress(@RequestBody @Valid request: AddAddressRequest) =
+        userService.addAddress(request.address!!)
 
     @ServiceLog(description = "删除收货地址")
     @PostMapping("/deleteAddress")
@@ -201,7 +197,8 @@ class UserController(
         summary = "删除收货地址",
         description = "删除指定索引的收货地址"
     )
-    fun deleteAddress(@RequestBody @Valid request: DeleteAddressRequest) = userService.deleteAddress(request.index!!)
+    fun deleteAddress(@RequestBody @Valid request: DeleteAddressRequest) =
+        userService.deleteAddress(request.index!!)
 
     @ServiceLog(description = "修改邮箱")
     @PostMapping("/modifyEmail")
@@ -233,12 +230,30 @@ class UserController(
         description = "查询用户列表"
     )
     fun list(
-        @RequestParam("realName", required = false) @Parameter(description = "真实姓名，模糊") realName: String?,
-        @RequestParam("gender", required = false) @Parameter(description = "性别，精确") gender: String?,
-        @RequestParam("birthday", required = false) @Parameter(description = "生日，yyyy-MM-dd，精确") birthday: String?,
-        @RequestParam("location", required = false) @Parameter(description = "位置，模糊") location: String?,
-        @RequestParam("studentId", required = false) @Parameter(description = "学号，精确") studentId: String?,
-        @RequestParam("classId", required = false) @Parameter(description = "班级，精确") classId: String?,
+        @RequestParam(
+            "realName",
+            required = false
+        ) @Parameter(description = "真实姓名，模糊") realName: String?,
+        @RequestParam(
+            "gender",
+            required = false
+        ) @Parameter(description = "性别，精确") gender: String?,
+        @RequestParam(
+            "birthday",
+            required = false
+        ) @Parameter(description = "生日，yyyy-MM-dd，精确") birthday: String?,
+        @RequestParam(
+            "location",
+            required = false
+        ) @Parameter(description = "位置，模糊") location: String?,
+        @RequestParam(
+            "studentId",
+            required = false
+        ) @Parameter(description = "学号，精确") studentId: String?,
+        @RequestParam(
+            "classId",
+            required = false
+        ) @Parameter(description = "班级，精确") classId: String?,
         @RequestParam(
             "admissionYear",
             required = false
@@ -247,17 +262,26 @@ class UserController(
             "graduationYear",
             required = false
         ) @Parameter(description = "毕业时间，yyyy，精确") graduationYear: String?,
-        @RequestParam("college", required = false) @Parameter(description = "学院，精确") college: String?,
-        @RequestParam("industry", required = false) @Parameter(description = "行业，精确") industry: String?,
-        @RequestParam("company", required = false) @Parameter(description = "公司，精确") company: String?,
+        @RequestParam(
+            "college",
+            required = false
+        ) @Parameter(description = "学院，精确") college: String?,
+        @RequestParam(
+            "industry",
+            required = false
+        ) @Parameter(description = "行业，精确") industry: String?,
+        @RequestParam(
+            "company",
+            required = false
+        ) @Parameter(description = "公司，精确") company: String?,
         @RequestParam("page") @Parameter(
             description = "页码, 从1开始",
             required = true
-        ) @Valid @NotNull @Min(1) page: Int = 1,
+        ) @Valid @NotNull @Min(1) page: Int?,
         @RequestParam("limit") @Parameter(
             description = "每页数量, 大于0",
             required = true
-        ) @Valid @NotNull @Min(1) limit: Int = 10
+        ) @Valid @NotNull @Min(1) limit: Int?
     ) = userService.list(
         realName,
         gender,
@@ -270,8 +294,8 @@ class UserController(
         college,
         industry,
         company,
-        page,
-        limit
+        page!!,
+        limit!!
     )
 
     @ServiceLog(description = "用户列表下载", printResponse = false)
@@ -287,7 +311,10 @@ class UserController(
             userService.download().use { workbook ->
                 ByteArrayOutputStream().use { os ->
                     workbook.write(os)
-                    return DownloadUtils.downloadFile("user_${LocalDateTime.now()}.xlsx", os.toByteArray())
+                    return DownloadUtils.downloadFile(
+                        "user_${LocalDateTime.now()}.xlsx",
+                        os.toByteArray()
+                    )
                 }
             }
         } catch (e: Exception) {
@@ -326,7 +353,7 @@ class UserController(
         summary = "管理员上传用户信息",
         description = "管理员上传用户信息"
     )
-    fun upload(@RequestBody @Valid request: UserUploadRequest): Response<Unit> {
+    fun upload(@ModelAttribute @Valid request: UserUploadRequest): Response<Unit> {
         return userService.upload(request.file!!)
     }
 
@@ -334,7 +361,10 @@ class UserController(
     @GetMapping("/findByKeyword")
     @AuthCheck
     @Tag(name = "用户接口")
-    @Operation(summary = "根据关键词查询用户信息", description = "根据关键词查询用户信息，最多返回10个")
+    @Operation(
+        summary = "根据关键词查询用户信息",
+        description = "根据关键词查询用户信息，最多返回10个"
+    )
     fun findByKeyword(
         @RequestParam("keyword") @Parameter(
             description = "关键词",

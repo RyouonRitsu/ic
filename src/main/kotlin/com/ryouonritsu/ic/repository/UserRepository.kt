@@ -13,7 +13,10 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface UserRepository : JpaRepositoryImplementation<User, Long> {
+    @Query("SELECT u FROM User u WHERE u.username = ?1 AND u.isDeleted = false")
     fun findByUsername(username: String): User?
+
+    @Query("SELECT u FROM User u WHERE u.email = ?1 AND u.isDeleted = false")
     fun findByEmail(email: String): User?
 
     @Query(
@@ -30,10 +33,4 @@ interface UserRepository : JpaRepositoryImplementation<User, Long> {
 
     @Query("SELECT u FROM User u WHERE u.isDeleted = false ORDER BY u.createTime")
     fun list(pageable: Pageable = PageRequest.of(0, 10)): Page<User>
-
-    @Query("SELECT u FROM User u WHERE u.username LIKE %?1% OR u.realName LIKE %?1%")
-    fun findByUsernameOrRealNameLike(
-        username: String,
-        pageable: Pageable = PageRequest.of(0, 1)
-    ): Page<User>
 }
