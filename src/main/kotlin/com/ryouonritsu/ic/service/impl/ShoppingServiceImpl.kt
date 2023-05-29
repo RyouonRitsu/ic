@@ -102,16 +102,16 @@ class ShoppingServiceImpl(
 
     override fun listOrders(
         keyword: String?,
-        state: Order.State?,
+        states: List<Order.State>?,
         page: Int,
         limit: Int
     ): Response<ListOrderResponse> {
         val specification = Specification<Order> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
-            if (!keyword.isNullOrBlank())
-                predicates += cb.like(root["goodsInfo"], "%$keyword%")
-            if (state != null)
-                predicates += cb.equal(root.get<Int>("state"), state.code)
+            if (!keyword.isNullOrBlank()) predicates += cb.like(root["goodsInfo"], "%$keyword%")
+            if (!states.isNullOrEmpty()) predicates += cb.`in`(root.get<Int>("state")).apply {
+                states.forEach { this.value(it.code) }
+            }
             predicates += cb.equal(root.get<Boolean>("status"), true)
             query.where(*predicates.toTypedArray())
                 .orderBy(cb.desc(root.get<LocalDateTime>("createTime")))

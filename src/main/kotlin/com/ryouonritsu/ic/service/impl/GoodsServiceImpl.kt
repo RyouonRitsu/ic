@@ -96,7 +96,7 @@ class GoodsServiceImpl(
     override fun list(
         keyword: String?,
         type: String?,
-        state: Goods.State?,
+        states: List<Goods.State>?,
         priceFloor: BigDecimal?,
         priceCeil: BigDecimal?,
         sortField: GoodsSortField,
@@ -105,26 +105,23 @@ class GoodsServiceImpl(
     ): Response<ListGoodsResponse> {
         val specification = Specification<Goods> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
-            if (!keyword.isNullOrBlank())
-                predicates += cb.or(
-                    cb.like(root["name"], "%$keyword%"),
-                    cb.like(root["type"], "%$keyword%"),
-                    cb.like(root["description"], "%$keyword%")
-                )
-            if (!type.isNullOrBlank())
-                predicates += cb.like(root["type"], "%$type%")
-            if (state != null)
-                predicates += cb.equal(root.get<Int>("state"), state.code)
-            if (priceFloor != null)
-                predicates += cb.ge(
-                    cb.prod(root["price"], root["discount"]),
-                    priceFloor
-                )
-            if (priceCeil != null)
-                predicates += cb.le(
-                    cb.prod(root["price"], root["discount"]),
-                    priceCeil
-                )
+            if (!keyword.isNullOrBlank()) predicates += cb.or(
+                cb.like(root["name"], "%$keyword%"),
+                cb.like(root["type"], "%$keyword%"),
+                cb.like(root["description"], "%$keyword%")
+            )
+            if (!type.isNullOrBlank()) predicates += cb.like(root["type"], "%$type%")
+            if (!states.isNullOrEmpty()) predicates += cb.`in`(root.get<Int>("state")).apply {
+                states.forEach { this.value(it.code) }
+            }
+            if (priceFloor != null) predicates += cb.ge(
+                cb.prod(root["price"], root["discount"]),
+                priceFloor
+            )
+            if (priceCeil != null) predicates += cb.le(
+                cb.prod(root["price"], root["discount"]),
+                priceCeil
+            )
             predicates += cb.equal(root.get<Boolean>("status"), true)
             query.where(*predicates.toTypedArray())
                 .orderBy(
@@ -150,13 +147,13 @@ class GoodsServiceImpl(
     override fun download(
         keyword: String?,
         type: String?,
-        state: Goods.State?,
+        states: List<Goods.State>?,
         priceFloor: BigDecimal?,
         priceCeil: BigDecimal?,
         sortField: GoodsSortField
     ): Response<Unit> {
         val headers = tableTemplateService.queryHeaders(TemplateType.GOODS_LIST_TEMPLATE)
-        val data = list(keyword, type, state, priceFloor, priceCeil, sortField, INT_1, INT_40000)
+        val data = list(keyword, type, states, priceFloor, priceCeil, sortField, INT_1, INT_40000)
             .data?.list ?: listOf()
         asyncDownload(headers, data)
         return Response.success("下载任务已提交, 若下载成功会将下载链接以邮件形式发送到您的邮箱")

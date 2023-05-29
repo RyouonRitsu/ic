@@ -80,7 +80,7 @@ class GoodsController(
     fun list(
         @RequestParam(required = false) @Parameter(description = "关键词") keyword: String?,
         @RequestParam(required = false) @Parameter(description = "类型") type: String?,
-        @RequestParam(required = false) @Parameter(description = "状态") state: Goods.State?,
+        @RequestParam(required = false) @Parameter(description = "状态集合") states: List<Goods.State>?,
         @RequestParam(required = false) @Parameter(description = "价格下限") priceFloor: BigDecimal?,
         @RequestParam(required = false) @Parameter(description = "价格上限") priceCeil: BigDecimal?,
         @RequestParam(
@@ -91,7 +91,7 @@ class GoodsController(
         @Valid @NotNull @Min(1) page: Int?,
         @RequestParam @Parameter(description = "每页数量", required = true)
         @Valid @NotNull @Min(1) limit: Int?
-    ) = goodsService.list(keyword, type, state, priceFloor, priceCeil, sortField, page!!, limit!!)
+    ) = goodsService.list(keyword, type, states, priceFloor, priceCeil, sortField, page!!, limit!!)
 
     @ServiceLog(description = "商品查询结果下载")
     @GetMapping("/download")
@@ -101,14 +101,14 @@ class GoodsController(
     fun download(
         @RequestParam(required = false) @Parameter(description = "关键词") keyword: String?,
         @RequestParam(required = false) @Parameter(description = "类型") type: String?,
-        @RequestParam(required = false) @Parameter(description = "状态") state: Goods.State?,
+        @RequestParam(required = false) @Parameter(description = "状态集合") states: List<Goods.State>?,
         @RequestParam(required = false) @Parameter(description = "价格下限") priceFloor: BigDecimal?,
         @RequestParam(required = false) @Parameter(description = "价格上限") priceCeil: BigDecimal?,
         @RequestParam(
             required = false,
             defaultValue = "VIEW_CNT_DESC"
         ) @Parameter(description = "排序字段") sortField: GoodsSortField,
-    ) = goodsService.download(keyword, type, state, priceFloor, priceCeil, sortField)
+    ) = goodsService.download(keyword, type, states, priceFloor, priceCeil, sortField)
 
     @ServiceLog(description = "管理员编辑商品状态")
     @PostMapping("/adminModifyState")

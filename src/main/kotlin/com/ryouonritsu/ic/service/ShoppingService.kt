@@ -20,7 +20,7 @@ interface ShoppingService {
     fun removeFromCart(recordIds: List<Long>): Response<Unit>
     fun listOrders(
         keyword: String?,
-        state: Order.State?,
+        states: List<Order.State>?,
         page: Int,
         limit: Int
     ): Response<ListOrderResponse>

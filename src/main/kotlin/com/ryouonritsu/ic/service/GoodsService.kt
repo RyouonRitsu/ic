@@ -20,7 +20,7 @@ interface GoodsService {
     fun list(
         keyword: String?,
         type: String?,
-        state: Goods.State?,
+        states: List<Goods.State>?,
         priceFloor: BigDecimal?,
         priceCeil: BigDecimal?,
         sortField: GoodsSortField,
@@ -31,7 +31,7 @@ interface GoodsService {
     fun download(
         keyword: String?,
         type: String?,
-        state: Goods.State?,
+        states: List<Goods.State>?,
         priceFloor: BigDecimal?,
         priceCeil: BigDecimal?,
         sortField: GoodsSortField

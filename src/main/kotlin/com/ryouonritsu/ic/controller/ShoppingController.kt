@@ -72,12 +72,12 @@ class ShoppingController(
     @Operation(summary = "订单查询", description = "订单查询")
     fun listOrders(
         @RequestParam(required = false) @Parameter(description = "关键词") keyword: String?,
-        @RequestParam(required = false) @Parameter(description = "状态") state: Order.State?,
+        @RequestParam(required = false) @Parameter(description = "状态集合") states: List<Order.State>?,
         @RequestParam @Parameter(description = "页数, 从1开始", required = true)
         @Valid @NotNull @Min(1) page: Int?,
         @RequestParam @Parameter(description = "每页数量", required = true)
         @Valid @NotNull @Min(1) limit: Int?
-    ) = shoppingService.listOrders(keyword, state, page!!, limit!!)
+    ) = shoppingService.listOrders(keyword, states, page!!, limit!!)
 
     @ServiceLog(description = "批量下单")
     @PostMapping("/bulkOrder")
