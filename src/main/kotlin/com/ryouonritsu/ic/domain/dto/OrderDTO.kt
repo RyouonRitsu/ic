@@ -38,4 +38,6 @@ data class OrderDTO(
         order.createTime,
         order.modifyTime
     )
+
+    companion object
 }

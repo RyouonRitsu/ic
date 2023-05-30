@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.service
 
+import com.ryouonritsu.ic.domain.dto.OrderDTO
 import com.ryouonritsu.ic.domain.protocol.response.ListCartResponse
 import com.ryouonritsu.ic.domain.protocol.response.ListOrderResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
@@ -25,8 +26,11 @@ interface ShoppingService {
         limit: Int
     ): Response<ListOrderResponse>
 
-    fun bulkOrder(recordIds: List<Long>, address: String): Response<Unit>
-    fun order(goodsId: Long, amount: Long, address: String): Response<Unit>
-    fun pay(orderId: Long): Response<Unit>
+    fun bulkOrder(recordIds: List<Long>): Response<OrderDTO>
+    fun order(goodsId: Long, amount: Long): Response<OrderDTO>
+    fun findOrderById(orderId: Long): Response<OrderDTO>
+    fun cancelOrder(orderId: Long): Response<Unit>
+    fun deleteOrder(orderId: Long): Response<Unit>
+    fun pay(orderId: Long, address: String): Response<Unit>
     fun recharge(value: BigDecimal): Response<Unit>
 }

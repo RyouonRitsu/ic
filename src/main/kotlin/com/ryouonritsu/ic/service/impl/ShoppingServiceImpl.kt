@@ -119,20 +119,22 @@ class ShoppingServiceImpl(
         }
         val result = orderRepository.findAll(specification, PageRequest.of(page - 1, limit))
         val total = result.totalElements
-        val list = result.content.map {
-            val info = it.goodsInfo.parseArray<GoodsInfoDTO>()
-            val details = info.map { i ->
-                val goods = goodsRepository.findById(i.id).getOrElse {
-                    throw ServiceException(ExceptionEnum.NOT_FOUND)
-                }
-                GoodsDetailDTO(i, goods)
-            }
-            OrderDTO(it, details)
-        }
+        val list = result.content.map { OrderDTO.from(it) }
         return Response.success(ListOrderResponse(list, total))
     }
 
-    override fun bulkOrder(recordIds: List<Long>, address: String): Response<Unit> {
+    fun OrderDTO.Companion.from(order: Order): OrderDTO {
+        val info = order.goodsInfo.parseArray<GoodsInfoDTO>()
+        val details = info.map { i ->
+            val goods = goodsRepository.findById(i.id).getOrElse {
+                throw ServiceException(ExceptionEnum.NOT_FOUND)
+            }
+            GoodsDetailDTO(i, goods)
+        }
+        return OrderDTO(order, details)
+    }
+
+    override fun bulkOrder(recordIds: List<Long>): Response<OrderDTO> {
         val records = cartRecordRepository.findAllById(recordIds as MutableList<Long>)
         if (records.isEmpty()) throw ServiceException(ExceptionEnum.NOT_FOUND)
         val goodsList = goodsRepository.findAllById(records.map { it.goodsId } as MutableList<Long>)
@@ -148,35 +150,59 @@ class ShoppingServiceImpl(
         }
         val price = goodsDetails.map { it.goods.price.toBigDecimal() * it.amount.toBigDecimal() }
             .sumOf { it }
-        val order = Order(
+        var order = Order(
             userId = RequestContext.userId.get()!!,
             goodsInfo = goodsDetails.map { GoodsInfoDTO.from(it) }.toJSONString(),
-            address = address,
             price = price
         )
         records.forEach { it.status = false }
         transactionTemplate.execute {
-            orderRepository.save(order)
+            order = orderRepository.save(order)
             cartRecordRepository.saveAll(records)
         }
-        return Response.success()
+        return Response.success(OrderDTO(order, goodsDetails))
     }
 
-    override fun order(goodsId: Long, amount: Long, address: String): Response<Unit> {
+    override fun order(goodsId: Long, amount: Long): Response<OrderDTO> {
         val goods = goodsRepository.findById(goodsId).getOrElse {
             throw ServiceException(ExceptionEnum.NOT_FOUND)
-        }
-        val order = Order(
+        }.toDTO()
+        val goodsDetail = GoodsDetailDTO(goods, amount.toString())
+        var order = Order(
             userId = RequestContext.userId.get()!!,
-            goodsInfo = listOf(GoodsInfoDTO(goodsId, goods.name, amount)).toJSONString(),
-            address = address,
-            price = goods.price * amount.toBigDecimal()
+            goodsInfo = listOf(GoodsInfoDTO.from(goodsDetail)).toJSONString(),
+            price = goods.price.toBigDecimal() * amount.toBigDecimal()
         )
+        transactionTemplate.execute { order = orderRepository.save(order) }
+        return Response.success(OrderDTO(order, listOf(goodsDetail)))
+    }
+
+    override fun findOrderById(orderId: Long): Response<OrderDTO> {
+        val order = orderRepository.findById(orderId).getOrElse {
+            throw ServiceException(ExceptionEnum.NOT_FOUND)
+        }
+        return Response.success(OrderDTO.from(order))
+    }
+
+    override fun cancelOrder(orderId: Long): Response<Unit> {
+        val order = orderRepository.findById(orderId).getOrElse {
+            throw ServiceException(ExceptionEnum.NOT_FOUND)
+        }
+        order.state = Order.State.CANCELLED.code
         transactionTemplate.execute { orderRepository.save(order) }
         return Response.success()
     }
 
-    override fun pay(orderId: Long): Response<Unit> {
+    override fun deleteOrder(orderId: Long): Response<Unit> {
+        val order = orderRepository.findById(orderId).getOrElse {
+            throw ServiceException(ExceptionEnum.NOT_FOUND)
+        }
+        order.status = false
+        transactionTemplate.execute { orderRepository.save(order) }
+        return Response.success()
+    }
+
+    override fun pay(orderId: Long, address: String): Response<Unit> {
         val order = orderRepository.findById(orderId).getOrElse {
             throw ServiceException(ExceptionEnum.NOT_FOUND)
         }
@@ -191,6 +217,8 @@ class ShoppingServiceImpl(
             order.goodsInfo.parseArray<GoodsInfoDTO>().forEach {
                 goodsManager.adjustProperties(it.id, -it.amount, it.amount)
             }
+
+            order.address = address
             order.state = Order.State.PAID.code
             orderRepository.save(order)
         }

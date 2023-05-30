@@ -85,7 +85,7 @@ class ShoppingController(
     @Tag(name = "购物接口")
     @Operation(summary = "批量下单", description = "批量下单")
     fun bulkOrder(@RequestBody @Valid request: BulkOrderRequest) =
-        shoppingService.bulkOrder(request.recordIds!!, request.address!!)
+        shoppingService.bulkOrder(request.recordIds!!)
 
     @ServiceLog(description = "下单")
     @PostMapping("/order")
@@ -93,7 +93,33 @@ class ShoppingController(
     @Tag(name = "购物接口")
     @Operation(summary = "下单", description = "下单")
     fun order(@RequestBody @Valid request: OrderRequest) =
-        shoppingService.order(request.goodsId!!, request.amount!!, request.address!!)
+        shoppingService.order(request.goodsId!!, request.amount!!)
+
+    @ServiceLog(description = "通过ID寻找有效订单")
+    @GetMapping("/findOrderById")
+    @AuthCheck
+    @Tag(name = "购物接口")
+    @Operation(summary = "通过ID寻找有效订单", description = "通过ID寻找有效订单")
+    fun findOrderById(
+        @RequestParam @Parameter(description = "订单ID", required = true)
+        @Valid @NotNull orderId: Long?
+    ) = shoppingService.findOrderById(orderId!!)
+
+    @ServiceLog(description = "取消订单")
+    @PostMapping("/cancelOrder")
+    @AuthCheck
+    @Tag(name = "购物接口")
+    @Operation(summary = "取消订单", description = "取消订单")
+    fun cancelOrder(@RequestBody @Valid request: IdRequest) =
+        shoppingService.cancelOrder(request.id!!)
+
+    @ServiceLog(description = "删除订单")
+    @PostMapping("/deleteOrder")
+    @AuthCheck
+    @Tag(name = "购物接口")
+    @Operation(summary = "删除订单", description = "删除订单")
+    fun deleteOrder(@RequestBody @Valid request: IdRequest) =
+        shoppingService.deleteOrder(request.id!!)
 
     @ServiceLog(description = "支付")
     @PostMapping("/pay")
@@ -101,7 +127,7 @@ class ShoppingController(
     @Tag(name = "购物接口")
     @Operation(summary = "支付", description = "支付")
     fun pay(@RequestBody @Valid request: PayRequest) =
-        shoppingService.pay(request.orderId!!)
+        shoppingService.pay(request.orderId!!, request.address!!)
 
     @ServiceLog(description = "充值")
     @PostMapping("/recharge")

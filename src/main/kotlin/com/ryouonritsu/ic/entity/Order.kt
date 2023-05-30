@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.entity
 
+import com.ryouonritsu.ic.common.constants.ICConstant.EMPTY_STR
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import javax.persistence.*
@@ -23,7 +24,7 @@ class Order(
     @Column(name = "goods_info", columnDefinition = "TEXT COMMENT '商品信息'")
     var goodsInfo: String,
     @Column(columnDefinition = "VARCHAR(511) DEFAULT '' COMMENT '收货地址'", nullable = false)
-    var address: String,
+    var address: String = EMPTY_STR,
     @Column(columnDefinition = "DECIMAL(30, 6) DEFAULT '0' COMMENT '价格'", nullable = false)
     var price: BigDecimal,
     @Column(columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '状态'", nullable = false)
@@ -52,7 +53,8 @@ class Order(
         UNPAID(0, "未支付"),
         PAID(1, "已支付"),
         REFUNDING(2, "退款中"),
-        REFUNDED(3, "已退款");
+        REFUNDED(3, "已退款"),
+        CANCELLED(4, "已取消");
 
         companion object {
             fun valueOf(code: Int) = values().find { it.code == code } ?: UNPAID
