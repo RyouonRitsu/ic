@@ -108,6 +108,7 @@ class ShoppingServiceImpl(
     ): Response<ListOrderResponse> {
         val specification = Specification<Order> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
+            predicates += cb.equal(root.get<Long>("userId"), RequestContext.userId.get()!!)
             if (!keyword.isNullOrBlank()) predicates += cb.like(root["goodsInfo"], "%$keyword%")
             if (!states.isNullOrEmpty()) predicates += cb.`in`(root.get<Int>("state")).apply {
                 states.forEach { this.value(it.code) }
