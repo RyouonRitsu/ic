@@ -1,5 +1,8 @@
 package com.ryouonritsu.ic.config
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
+import com.ryouonritsu.ic.common.utils.RequestContext
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
@@ -9,24 +12,40 @@ import java.util.concurrent.ThreadPoolExecutor
  * @author ryouonritsu
  */
 @Configuration
-class AsyncConfig {
-    companion object {
-        const val MAX_POOL_SIZE = 20
-        const val CORE_POOL_SIZE = 5
-        const val QUEUE_CAPACITY = 200
-        const val AWAIT_TERMINATION_SECONDS = 60
-    }
-
+class AsyncConfig(
+    @Value("\${thread.pool.maxPoolSize}")
+    private val maxPoolSize: Int,
+    @Value("\${thread.pool.corePoolSize}")
+    private val corePoolSize: Int,
+    @Value("\${thread.pool.queueCapacity}")
+    private val queueCapacity: Int,
+    @Value("\${thread.pool.keepAliveSeconds}")
+    private val keepAliveSeconds: Int,
+    @Value("\${thread.pool.awaitTerminationMillis}")
+    private val awaitTerminationMillis: Int
+) {
     @Bean("asyncTaskExecutor")
     fun asyncTaskExecutor(): ThreadPoolTaskExecutor {
         return ThreadPoolTaskExecutor().apply {
-            maxPoolSize = MAX_POOL_SIZE
-            corePoolSize = CORE_POOL_SIZE
-            queueCapacity = QUEUE_CAPACITY
-            setThreadNamePrefix("ritsu-async-task-thread-pool-")
+            setThreadFactory(
+                ThreadFactoryBuilder()
+                    .setNameFormat("ritsu-async-task-thread-pool-%d")
+                    .build()
+            )
+            maxPoolSize = this@AsyncConfig.maxPoolSize
+            corePoolSize = this@AsyncConfig.corePoolSize
+            queueCapacity = this@AsyncConfig.queueCapacity
+            keepAliveSeconds = this@AsyncConfig.keepAliveSeconds
             setWaitForTasksToCompleteOnShutdown(true)
-            setAwaitTerminationSeconds(AWAIT_TERMINATION_SECONDS)
+            setAwaitTerminationSeconds(this@AsyncConfig.awaitTerminationMillis)
             setRejectedExecutionHandler(ThreadPoolExecutor.CallerRunsPolicy())
+            setTaskDecorator {
+                val userId = RequestContext.userId
+                return@setTaskDecorator Runnable {
+                    RequestContext.userId = userId
+                    it.run()
+                }
+            }
             initialize()
         }
     }

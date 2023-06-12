@@ -11,18 +11,18 @@ import java.util.concurrent.TimeUnit
  */
 @Component
 class RedisUtils(
-    var redisTemplate: RedisTemplate<String, String>
+    var redisTemplate: RedisTemplate<Any, Any>
 ) {
     companion object {
         val log: Logger = LoggerFactory.getLogger(RedisUtils::class.java)
     }
 
-    operator fun get(key: String) = redisTemplate.opsForValue().get(key)
+    operator fun get(key: String) = redisTemplate.opsForValue()[key]?.toString()
 
     operator fun set(key: String, value: String): Boolean {
         var result = false
         try {
-            redisTemplate.opsForValue().set(key, value)
+            redisTemplate.opsForValue()[key] = value
             result = true
         } catch (e: Exception) {
             log.error("RedisUtils.set error: ", e)
@@ -44,7 +44,7 @@ class RedisUtils(
     fun getAndSet(key: String, value: String): String? {
         var result: String? = null
         try {
-            result = redisTemplate.opsForValue().getAndSet(key, value)
+            result = redisTemplate.opsForValue().getAndSet(key, value)?.toString()
         } catch (e: Exception) {
             log.error("RedisUtils.getAndSet error: ", e)
         }
@@ -54,8 +54,7 @@ class RedisUtils(
     operator fun minus(key: String): Boolean {
         var result = false
         try {
-            redisTemplate.delete(key)
-            result = true
+            result = redisTemplate.delete(key)
         } catch (e: Exception) {
             log.error("RedisUtils.minus error: ", e)
         }

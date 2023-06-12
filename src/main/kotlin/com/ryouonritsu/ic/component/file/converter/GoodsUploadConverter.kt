@@ -30,7 +30,7 @@ object GoodsUploadConverter {
             price = getValue(3).toBigDecimal(),
             discount = getValue(4).toBigDecimal(),
             description = getValue(5),
-            userId = RequestContext.userId.get()!!
+            userId = RequestContext.userId!!
         )
     }
 }

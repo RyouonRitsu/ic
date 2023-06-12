@@ -49,7 +49,7 @@ class TokenInterceptor : HandlerInterceptor {
             log.info("现有的token: $token")
             if (redisUtils["$userId"] == token && result) {
                 log.info("通过拦截器")
-                RequestContext.userId.set(userId)
+                RequestContext.userId = userId
                 return true
             } else {
                 log.info("已经存在一个token，未通过拦截器")

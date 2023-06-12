@@ -197,7 +197,7 @@ class GoodsServiceImpl(
 
     private fun asyncDownload(headers: List<ColumnDSL>, data: List<GoodsDTO>) {
         val time = System.currentTimeMillis()
-        val userId = RequestContext.userId.get()
+        val userId = RequestContext.userId
         val fileDir = "static/file/${userId!!}"
         val fileName = "goods_${time}.xlsx"
         val filePath = "$fileDir/$fileName"

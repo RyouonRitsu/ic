@@ -47,9 +47,11 @@ dependencies {
     implementation("jakarta.mail:jakarta.mail-api:2.1.1")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.auth0:java-jwt:4.4.0")
-    implementation("com.alibaba.fastjson2:fastjson2-kotlin:2.0.32")
+    implementation("com.alibaba.fastjson2:fastjson2-kotlin:2.0.33")
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2
+    implementation("org.apache.commons:commons-pool2:2.11.1")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("com.mysql:mysql-connector-j")
     annotationProcessor("org.projectlombok:lombok")

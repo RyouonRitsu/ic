@@ -45,7 +45,7 @@ class AuthCheckAspect(
         val authCheck = (joinPoint.signature as MethodSignature).method
             .getAnnotation(AuthCheck::class.java)
         if (AuthEnum.ADMIN in authCheck.auth) {
-            val user = userRepository.findById(RequestContext.userId.get()!!)
+            val user = userRepository.findById(RequestContext.userId!!)
                 .orElseThrow { throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST) }
             if (!user.isAdmin) throw ServiceException(ExceptionEnum.PERMISSION_DENIED)
         }

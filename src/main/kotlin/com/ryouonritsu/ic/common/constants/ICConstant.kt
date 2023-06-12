@@ -78,4 +78,9 @@ object ICConstant {
      * 事件
      */
     const val EVENT = "event"
+
+    /**
+     * 用户ID
+     */
+    const val USER_ID = "userId"
 }

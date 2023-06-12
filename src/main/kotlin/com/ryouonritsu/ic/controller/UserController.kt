@@ -78,7 +78,7 @@ class UserController(
     @Tag(name = "用户接口")
     @Operation(summary = "用户登出")
     fun logout(): Response<Any> {
-        redisUtils - "${RequestContext.userId.get()}"
+        redisUtils - "${RequestContext.userId}"
         return Response.success("登出成功")
     }
 
@@ -87,7 +87,7 @@ class UserController(
     @AuthCheck
     @Tag(name = "用户接口")
     @Operation(summary = "返回已登陆用户的信息", description = "需要用户登陆才能查询成功")
-    fun showInfo() = userService.showInfo(RequestContext.userId.get()!!)
+    fun showInfo() = userService.showInfo(RequestContext.userId!!)
 
     @ServiceLog(description = "根据用户id查询用户信息")
     @GetMapping("/selectUserByUserId")

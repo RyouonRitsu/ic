@@ -359,7 +359,7 @@ class UserServiceImpl(
             1 -> {
                 return runCatching {
                     val user = userRepository.findById(
-                        RequestContext.userId.get()
+                        RequestContext.userId
                             ?: return Response.failure("无法验证用户信息, 请登录!")
                     ).get()
                     if (password1.isNullOrBlank() || password2.isNullOrBlank() || oldPassword.isNullOrBlank()) return Response.failure(
@@ -374,7 +374,7 @@ class UserServiceImpl(
                     Response.success<Unit>("修改成功")
                 }.onFailure {
                     if (it is NoSuchElementException) {
-                        redisUtils - "${RequestContext.userId.get()}"
+                        redisUtils - "${RequestContext.userId}"
                         return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
                     }
                     log.error(it.stackTraceToString())
@@ -394,7 +394,7 @@ class UserServiceImpl(
         return runCatching {
             if (file.size >= 10 * 1024 * 1024) return Response.failure("上传失败, 文件大小超过最大限制10MB！")
             val time = System.currentTimeMillis()
-            val userId = RequestContext.userId.get()
+            val userId = RequestContext.userId
             val fileDir = "static/file/${userId}"
             val fileName = "${time}_${file.originalFilename}"
             val filePath = "$fileDir/$fileName"
@@ -438,7 +438,7 @@ class UserServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun modifyUserInfo(request: ModifyUserInfoRequest): Response<Unit> {
         return runCatching {
-            val user = userRepository.findById(request.id ?: RequestContext.userId.get()!!).get()
+            val user = userRepository.findById(request.id ?: RequestContext.userId!!).get()
             if (!request.email.isNullOrBlank()) user.email = request.email!!
             if (!request.username.isNullOrBlank()) {
                 val t = userRepository.findByUsername(request.username)
@@ -486,7 +486,7 @@ class UserServiceImpl(
             Response.success<Unit>("修改成功")
         }.onFailure {
             if (it is NoSuchElementException) {
-                redisUtils - "${RequestContext.userId.get()}"
+                redisUtils - "${RequestContext.userId}"
                 return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
             }
             log.error(it.stackTraceToString())
@@ -500,7 +500,7 @@ class UserServiceImpl(
         password: String?
     ): Response<Unit> {
         return runCatching {
-            val user = userRepository.findById(RequestContext.userId.get()!!).get()
+            val user = userRepository.findById(RequestContext.userId!!).get()
             val (result, message) = emailCheck(email)
             if (!result && message != null) return message
             val t = userRepository.findByEmail(email!!)
@@ -522,7 +522,7 @@ class UserServiceImpl(
             Response.success("修改成功")
         }.onFailure {
             if (it is NoSuchElementException) {
-                redisUtils - "${RequestContext.userId.get()}"
+                redisUtils - "${RequestContext.userId}"
                 return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
             }
             if (it.message != null) return Response.failure("${it.message}")
@@ -532,8 +532,8 @@ class UserServiceImpl(
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun addAddress(address: String): Response<Unit> {
-        val user = userRepository.findById(RequestContext.userId.get()!!).getOrElse {
-            redisUtils - "${RequestContext.userId.get()}"
+        val user = userRepository.findById(RequestContext.userId!!).getOrElse {
+            redisUtils - "${RequestContext.userId}"
             return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
         }
         val userInfo = user.userInfo.to<UserInfoDTO>()
@@ -545,8 +545,8 @@ class UserServiceImpl(
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun deleteAddress(index: Int): Response<Unit> {
-        val user = userRepository.findById(RequestContext.userId.get()!!).getOrElse {
-            redisUtils - "${RequestContext.userId.get()}"
+        val user = userRepository.findById(RequestContext.userId!!).getOrElse {
+            redisUtils - "${RequestContext.userId}"
             return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
         }
         val userInfo = user.userInfo.to<UserInfoDTO>()

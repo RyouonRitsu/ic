@@ -50,7 +50,7 @@ class ShoppingServiceImpl(
 
     override fun listCart(page: Int, limit: Int): Response<ListCartResponse> {
         val result = cartRecordRepository.findByUserId(
-            RequestContext.userId.get()!!,
+            RequestContext.userId!!,
             PageRequest.of(page - 1, limit)
         )
         val total = result.totalElements
@@ -65,7 +65,7 @@ class ShoppingServiceImpl(
     }
 
     override fun addToCart(goodsId: Long, amount: Long): Response<Unit> {
-        val userId = RequestContext.userId.get()!!
+        val userId = RequestContext.userId!!
         val record = run {
             val r = cartRecordRepository.findByUserIdAndGoodsId(userId, goodsId)
                 ?: return@run CartRecord(
@@ -108,7 +108,7 @@ class ShoppingServiceImpl(
     ): Response<ListOrderResponse> {
         val specification = Specification<Order> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
-            predicates += cb.equal(root.get<Long>("userId"), RequestContext.userId.get()!!)
+            predicates += cb.equal(root.get<Long>("userId"), RequestContext.userId!!)
             if (!keyword.isNullOrBlank()) predicates += cb.like(root["goodsInfo"], "%$keyword%")
             if (!states.isNullOrEmpty()) predicates += cb.`in`(root.get<Int>("state")).apply {
                 states.forEach { this.value(it.code) }
@@ -152,7 +152,7 @@ class ShoppingServiceImpl(
         val price = goodsDetails.map { it.goods.price.toBigDecimal() * it.amount.toBigDecimal() }
             .sumOf { it }
         var order = Order(
-            userId = RequestContext.userId.get()!!,
+            userId = RequestContext.userId!!,
             goodsInfo = goodsDetails.map { GoodsInfoDTO.from(it) }.toJSONString(),
             price = price
         )
@@ -170,7 +170,7 @@ class ShoppingServiceImpl(
         }.toDTO()
         val goodsDetail = GoodsDetailDTO(goods, amount.toString())
         var order = Order(
-            userId = RequestContext.userId.get()!!,
+            userId = RequestContext.userId!!,
             goodsInfo = listOf(GoodsInfoDTO.from(goodsDetail)).toJSONString(),
             price = goods.price.toBigDecimal() * amount.toBigDecimal()
         )
@@ -209,7 +209,7 @@ class ShoppingServiceImpl(
         }
         if (order.state != Order.State.UNPAID.code)
             throw ServiceException(ExceptionEnum.DATA_TYPE_IS_INVALID)
-        val user = userRepository.findById(RequestContext.userId.get()!!).getOrElse {
+        val user = userRepository.findById(RequestContext.userId!!).getOrElse {
             throw ServiceException(ExceptionEnum.NOT_FOUND)
         }
         if (user.property < order.price) return Response.failure("余额不足")
@@ -227,7 +227,7 @@ class ShoppingServiceImpl(
     }
 
     override fun recharge(value: BigDecimal): Response<Unit> {
-        userManager.adjustProperty(RequestContext.userId.get()!!, value)
+        userManager.adjustProperty(RequestContext.userId!!, value)
         return Response.success()
     }
 }
