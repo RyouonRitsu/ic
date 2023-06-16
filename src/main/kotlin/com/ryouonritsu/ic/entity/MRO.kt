@@ -26,13 +26,13 @@ class MRO(
                 nullable = false
         )
         var roomId: Long,
-        @Column(columnDefinition = "LONGTEXT DEFAULT '' COMMENT '问题描述'", nullable = false)
+        @Column(columnDefinition = "LONGTEXT COMMENT '问题描述'", nullable = false)
         var problem: String = "",
         @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '期望时间段'", nullable = false)
         var expectTime: String = "",
         @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '实际时间段'", nullable = false)
         var actualTime: String = "",
-        @Column(columnDefinition = "LONGTEXT DEFAULT '' COMMENT '问题解决方法'", nullable = false)
+        @Column(columnDefinition = "LONGTEXT COMMENT '问题解决方法'", nullable = false)
         var resolvent: String = "",
         @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '维修时间'", nullable = false)
         var maintenanceTime: String = "",
@@ -42,12 +42,10 @@ class MRO(
                 nullable = false
         )
         var isSolved: Boolean = false,
-        @Column(
-                name = "is_deleted",
-                columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '是否已删除'",
-                nullable = false
-        )
-        var isDeleted: Boolean = false,
+        @Column(columnDefinition = "TINYINT(3) DEFAULT '1' COMMENT '生效状态'", nullable = false)
+        var status: Boolean = true,
+        @Column(columnDefinition = "INT DEFAULT '1' COMMENT '版本'", nullable = false)
+        var version: Int = 1,
         @Column(
                 name = "create_time",
                 columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'",
