@@ -7,5 +7,5 @@ import javax.xml.ws.Response
  * @author PaulManstein
  */
 interface RoomService {
-    fun shouInfo(roomId:Long): Response<List<RoomDTO>>
+    fun showInfo(roomId: Long): Response<List<RoomDTO>>
 }
