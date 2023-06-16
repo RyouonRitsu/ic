@@ -9,6 +9,7 @@ import com.ryouonritsu.ic.service.RoomService
 import org.springframework.stereotype.Service
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.RoomFile
+import com.ryouonritsu.ic.repository.RoomFileRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
@@ -22,6 +23,7 @@ import kotlin.io.path.Path
 class RoomServiceImpl(
     private val redisUtils: RedisUtils,
     private val roomRepository: RoomRepository,
+    private val roomFileRepository: RoomFileRepository,
     @Value("\${static.file.prefix}")
     private val staticFilePrefix: String,
 ) : RoomService {
@@ -49,7 +51,7 @@ class RoomServiceImpl(
             if (!File(fileDir).exists()) File(fileDir).mkdirs()
             file.transferTo(Path(filePath))
             val fileUrl = "http://$staticFilePrefix:8090/file/${roomId}/${fileName}"
-            roomRepository.save(
+            roomFileRepository.save(
                 RoomFile(
                     url = fileUrl,
                     filePath = filePath,
