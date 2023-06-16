@@ -45,11 +45,17 @@ class AuthCheckAspect(
     fun before(joinPoint: JoinPoint) {
         val authCheck = (joinPoint.signature as MethodSignature).method
             .getAnnotation(AuthCheck::class.java)
-        if (AuthEnum.ADMIN in authCheck.auth) {
-            val user = userRepository.findById(RequestContext.user!!.id)
+        val user by lazy {
+            userRepository.findById(RequestContext.user!!.id)
                 .orElseThrow { throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST) }
-            if (user.userType != User.UserType.ADMIN())
-                throw ServiceException(ExceptionEnum.PERMISSION_DENIED)
         }
+        if (AuthEnum.ADMIN in authCheck.auth && user.userType != User.UserType.ADMIN()
+            || AuthEnum.CLIENT in authCheck.auth && user.userType != User.UserType.CLIENT()
+            || AuthEnum.MAINTENANCE_STAFF in authCheck.auth && user.userType !in setOf(
+                User.UserType.WATER_MAINTENANCE_STAFF(),
+                User.UserType.ELECTRICITY_MAINTENANCE_STAFF(),
+                User.UserType.MACHINE_MAINTENANCE_STAFF()
+            )
+        ) throw ServiceException(ExceptionEnum.PERMISSION_DENIED)
     }
 }

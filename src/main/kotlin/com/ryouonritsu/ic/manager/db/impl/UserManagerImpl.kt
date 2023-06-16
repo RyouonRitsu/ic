@@ -38,7 +38,6 @@ class UserManagerImpl(
     @Value("\${mail.smtp.port}")
     private val mailSmtpPort: String,
 ) : UserManager {
-
     companion object {
         private val log = LoggerFactory.getLogger(UserServiceImpl::class.java)
     }

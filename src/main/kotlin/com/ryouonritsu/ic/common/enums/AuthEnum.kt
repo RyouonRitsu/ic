@@ -4,5 +4,5 @@ package com.ryouonritsu.ic.common.enums
  * @author ryouonritsu
  */
 enum class AuthEnum {
-    TOKEN, ADMIN;
+    TOKEN, ADMIN, CLIENT, MAINTENANCE_STAFF;
 }
