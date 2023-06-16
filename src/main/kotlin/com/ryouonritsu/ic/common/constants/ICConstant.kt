@@ -119,4 +119,9 @@ object ICConstant {
         User.UserType.ELECTRICITY_MAINTENANCE_STAFF(),
         User.UserType.MACHINE_MAINTENANCE_STAFF()
     )
+
+    /**
+     * 房间ID
+     */
+    const val ROOM_ID = "roomId"
 }
