@@ -8,5 +8,7 @@ import com.ryouonritsu.ic.domain.protocol.response.Response
  * @Date 2023/6/16 14:25
  */
 interface MROService {
-    fun selectMROByUserId(userId: Long): Response<List<MRODTO>>
+    fun selectMROByCustomId(userId: Long): Response<List<MRODTO>>
+
+    fun selectMROByWorkerId(userId: Long): Response<List<MRODTO>>
 }

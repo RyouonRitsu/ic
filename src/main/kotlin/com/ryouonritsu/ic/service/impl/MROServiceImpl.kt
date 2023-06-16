@@ -22,8 +22,13 @@ class MROServiceImpl(
         private val log = LoggerFactory.getLogger(UserServiceImpl::class.java)
     }
 
-    override fun selectMROByUserId(userId: Long): Response<List<MRODTO>> {
-        val orders = mroRepository.findByUserId(userId)
+    override fun selectMROByCustomId(userId: Long): Response<List<MRODTO>> {
+        val orders = mroRepository.findByCustomId(userId)
+        return Response.success(orders.map { it.toDTO() })
+    }
+
+    override fun selectMROByWorkerId(userId: Long): Response<List<MRODTO>> {
+        val orders = mroRepository.findByWorkerId(userId)
         return Response.success(orders.map { it.toDTO() })
     }
 }

@@ -29,15 +29,26 @@ class MROController(
         private val log = LoggerFactory.getLogger(UserController::class.java)
     }
 
-    @ServiceLog(description = "根据用户id查询所有维修工单")
-    @GetMapping("/selectMROByUserId")
+    @ServiceLog(description = "根据客户id查询所有维修工单")
+    @GetMapping("/selectMROByCustomId")
     @Tag(name = "维修工单接口")
     @Operation(summary = "根据用户id查询所有维修工单")
-    fun selectUserByUserId(
-            @RequestParam("user_id") @Parameter(
-                    description = "用户id",
+    fun selectUserByCustomId(
+            @RequestParam("custom_id") @Parameter(
+                    description = "客户id",
                     required = true
             ) userId: Long
-    ) = mroService.selectMROByUserId(userId)
+    ) = mroService.selectMROByCustomId(userId)
+
+    @ServiceLog(description = "根据维修工作人员id查询所有维修工单")
+    @GetMapping("/selectMROByWorkerId")
+    @Tag(name = "维修工单接口")
+    @Operation(summary = "根据维修工作人员id查询所有维修工单")
+    fun selectUserByWorkerId(
+        @RequestParam("worker_id") @Parameter(
+            description = "维修工作人员id",
+            required = true
+        ) userId: Long
+    ) = mroService.selectMROByWorkerId(userId)
 
 }

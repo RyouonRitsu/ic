@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface MRORepository : JpaRepositoryImplementation<MRO, Long> {
-    @Query("SELECT o FROM MRO o WHERE o.userId = ?1 AND o.status = true")
-    fun findByUserId(userId: Long): List<MRO>
+    @Query("SELECT o FROM MRO o WHERE o.customId = ?1 AND o.status = true")
+    fun findByCustomId(userId: Long): List<MRO>
+    @Query("SELECT o FROM MRO o WHERE o.workerId = ?1 AND o.status = true")
+    fun findByWorkerId(userId: Long): List<MRO>
 }

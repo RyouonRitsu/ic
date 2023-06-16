@@ -15,11 +15,17 @@ class MRO(
         @Column(columnDefinition = "BIGINT COMMENT '维修工单ID'", nullable = false)
         var id: Long = 0,
         @Column(
-                name = "user_id",
-                columnDefinition = "BIGINT DEFAULT '0' COMMENT '用户ID'",
+                name = "custom_id",
+                columnDefinition = "BIGINT DEFAULT '0' COMMENT '客户ID'",
                 nullable = false
         )
-        var userId: Long,
+        var customId: Long,
+        @Column(
+                name = "worker_id",
+                columnDefinition = "BIGINT DEFAULT '0' COMMENT '维修工作人员ID'",
+                nullable = false
+        )
+        var workerId: Long,
         @Column(
                 name = "room_id",
                 columnDefinition = "BIGINT DEFAULT '0' COMMENT '房间ID'",
@@ -61,7 +67,8 @@ class MRO(
 ) {
     fun toDTO() = MRODTO(
             id = "$id",
-            userId = "$userId",
+            customId = "$customId",
+            workerId = "$workerId",
             roomId = "$roomId",
             problem = problem,
             expectTime = expectTime,
