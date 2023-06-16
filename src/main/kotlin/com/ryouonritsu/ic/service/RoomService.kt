@@ -1,7 +1,7 @@
 package com.ryouonritsu.ic.service
 
 import com.ryouonritsu.ic.domain.dto.RoomDTO
-import javax.xml.ws.Response
+import com.ryouonritsu.ic.domain.protocol.response.Response
 
 /**
  * @author PaulManstein

@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.entity
 
+import com.ryouonritsu.ic.domain.dto.RoomDTO
 import java.time.LocalDate
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -28,4 +29,8 @@ class Room(
     var contract: LocalDate = LocalDate.of(1900,1, 1),
     @Column(name = "room_info", columnDefinition = "LONGTEXT COMMENT '用户信息JSON'")
     var roomInfo: String=""
-)
+){
+    fun toDTO(): RoomDTO {
+        TODO()
+    }
+}
