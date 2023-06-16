@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "columnName": "邮箱",
+    "dataType": "string",
+    "dataPaths": [
+      "$.email"
+    ]
+  },
+  {
+    "id": 2,
+    "columnName": "用户名",
+    "dataType": "string",
+    "dataPaths": [
+      "$.username"
+    ]
+  },
+  {
+    "id": 3,
+    "columnName": "法人名",
+    "dataType": "string",
+    "dataPaths": [
+      "$.legalName"
+    ]
+  },
+  {
+    "id": 4,
+    "columnName": "联系人姓名",
+    "dataType": "string",
+    "dataPaths": [
+      "$.contactName"
+    ]
+  },
+  {
+    "id": 5,
+    "columnName": "联系方式",
+    "dataType": "string",
+    "dataPaths": [
+      "$.phone"
+    ]
+  },
+  {
+    "id": 6,
+    "columnName": "公司名",
+    "dataType": "string",
+    "dataPaths": [
+      "$.companyName"
+    ]
+  },
+  {
+    "id": 7,
+    "columnName": "职位",
+    "dataType": "string",
+    "dataPaths": [
+      "$.position"
+    ]
+  },
+  {
+    "id": 8,
+    "columnName": "用户类型",
+    "dataType": "string",
+    "dataPaths": [
+      "$.userType"
+    ]
+  }
+]

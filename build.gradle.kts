@@ -3,9 +3,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("org.springframework.boot") version "2.7.12"
     id("io.spring.dependency-management") version "1.1.0"
-    kotlin("jvm") version "1.8.21"
-    kotlin("plugin.spring") version "1.8.21"
-    kotlin("plugin.jpa") version "1.8.21"
+    kotlin("jvm") version "1.8.22"
+    kotlin("plugin.spring") version "1.8.22"
+    kotlin("plugin.jpa") version "1.8.22"
 }
 
 group = "com.ryouonritsu.ic"
@@ -36,7 +36,7 @@ dependencies {
     implementation("org.springframework.experimental:spring-aot:0.12.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.1")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
@@ -48,7 +48,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.auth0:java-jwt:4.4.0")
     implementation("com.alibaba.fastjson2:fastjson2-kotlin:2.0.33")
-    implementation("com.google.guava:guava:31.1-jre")
+    implementation("com.google.guava:guava:32.0.1-jre")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
     // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2
     implementation("org.apache.commons:commons-pool2:2.11.1")

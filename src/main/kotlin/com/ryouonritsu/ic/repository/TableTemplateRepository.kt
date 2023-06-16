@@ -8,6 +8,6 @@ import org.springframework.data.jpa.repository.Query
  * @author ryouonritsu
  */
 interface TableTemplateRepository : JpaRepository<TableTemplate, Long> {
-    @Query("SELECT t FROM TableTemplate t WHERE t.templateType = ?1 AND t.isDeleted = false ORDER BY t.createTime DESC")
+    @Query("SELECT t FROM TableTemplate t WHERE t.templateType = ?1 AND t.status = true ORDER BY t.createTime DESC")
     fun findByTemplateType(templateType: Int): List<TableTemplate>
 }

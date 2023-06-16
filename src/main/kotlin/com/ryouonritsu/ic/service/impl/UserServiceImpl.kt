@@ -11,10 +11,7 @@ import com.ryouonritsu.ic.component.file.converter.UserUploadConverter
 import com.ryouonritsu.ic.component.getTemplate
 import com.ryouonritsu.ic.component.process
 import com.ryouonritsu.ic.component.read
-import com.ryouonritsu.ic.domain.dto.SchoolInfoDTO
-import com.ryouonritsu.ic.domain.dto.SocialInfoDTO
 import com.ryouonritsu.ic.domain.dto.UserDTO
-import com.ryouonritsu.ic.domain.dto.UserInfoDTO
 import com.ryouonritsu.ic.domain.protocol.request.*
 import com.ryouonritsu.ic.domain.protocol.response.ListUserResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
@@ -495,14 +492,12 @@ class UserServiceImpl(
         val user = UserDTO(
             email = "123456789@qq.com",
             username = "123456",
-            realName = "张三",
-            gender = "男",
+            legalName = "张三",
+            contactName = "李四",
             phone = "12345678999",
-            birthday = LocalDate.now(),
-            studentId = "12345678",
-            admissionYear = "2014",
-            graduationYear = "2018",
-            userInfo = UserInfoDTO(schoolInfo = SchoolInfoDTO(), socialInfo = SocialInfoDTO())
+            companyName = "BD",
+            position = "普通客户",
+            userType = "0"
         )
         return XSSFWorkbook().getTemplate(excelSheetDefinitions, listOf(user))
     }

@@ -2,6 +2,7 @@ package com.ryouonritsu.ic.entity
 
 import com.alibaba.fastjson2.JSONArray
 import com.alibaba.fastjson2.JSONObject
+import com.alibaba.fastjson2.parseArray
 import com.ryouonritsu.ic.domain.dto.UserDTO
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -116,7 +117,17 @@ class User(
         operator fun invoke() = code
     }
 
-    fun toDTO(): UserDTO {
-        TODO()
-    }
+    fun Int.toGender() = Gender.valueOf(this)
+    fun Int.toUserType() = UserType.valueOf(this)
+    fun toDTO() = UserDTO(
+        id = "$id",
+        email, username, avatar, legalName,
+        gender = gender.toGender().desc,
+        birthday, contactName, phone, location, companyName,
+        rentalInfoIds = rentalInfoIds.parseArray<String>(),
+        paymentInfo = paymentInfo.parseArray<String>(),
+        position,
+        userType = userType.toUserType().desc,
+        registrationTime = createTime
+    )
 }

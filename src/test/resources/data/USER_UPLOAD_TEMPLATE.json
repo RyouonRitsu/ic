@@ -1,0 +1,78 @@
+[
+  {
+    "sheetIndex": 0,
+    "sheetName": "USER_UPLOAD_TEMPLATE",
+    "columns": [
+      {
+        "id": 1,
+        "columnName": "邮箱",
+        "dataType": "string",
+        "dataPaths": [
+          "$.email"
+        ],
+        "extra": {
+          "unique": true
+        }
+      },
+      {
+        "id": 2,
+        "columnName": "用户名(初始密码)",
+        "dataType": "string",
+        "dataPaths": [
+          "$.username"
+        ],
+        "extra": {
+          "unique": true
+        }
+      },
+      {
+        "id": 3,
+        "columnName": "法人名",
+        "dataType": "string",
+        "dataPaths": [
+          "$.legalName"
+        ]
+      },
+      {
+        "id": 4,
+        "columnName": "联系人姓名",
+        "dataType": "string",
+        "dataPaths": [
+          "$.contactName"
+        ]
+      },
+      {
+        "id": 5,
+        "columnName": "联系方式",
+        "dataType": "string",
+        "dataPaths": [
+          "$.phone"
+        ]
+      },
+      {
+        "id": 6,
+        "columnName": "公司名",
+        "dataType": "string",
+        "dataPaths": [
+          "$.companyName"
+        ]
+      },
+      {
+        "id": 7,
+        "columnName": "职位",
+        "dataType": "string",
+        "dataPaths": [
+          "$.position"
+        ]
+      },
+      {
+        "id": 8,
+        "columnName": "用户类型, 0: 客户, 1: 管理员, 2: 水维修人员, 3: 电维修人员, 4: 机器维修人员",
+        "dataType": "string",
+        "dataPaths": [
+          "$.userType"
+        ]
+      }
+    ]
+  }
+]

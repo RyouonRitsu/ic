@@ -14,13 +14,11 @@ data class ColumnDSL(
     var id: Int?,
     @Schema(description = "列名", example = "name", required = true)
     var columnName: String?,
-    @Schema(description = "列标题", example = "姓名", required = true)
-    var defaultTitle: String?,
     @Schema(description = "数据类型", example = "string", required = true)
     var dataType: String?,
     @Schema(description = "附加信息")
     var extra: JSONObject?,
-    @Schema(description = "对应key", example = "[\"name\"]", required = true)
+    @Schema(description = "数据解析路径", example = "[\"$.name\"]", required = true)
     @JSONField(serializeFeatures = [JSONWriter.Feature.WriteNullListAsEmpty])
-    var keys: List<String>
+    var dataPaths: List<String>
 )

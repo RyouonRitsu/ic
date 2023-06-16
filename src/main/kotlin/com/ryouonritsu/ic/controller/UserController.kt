@@ -47,14 +47,14 @@ class UserController(
         summary = "发送注册验证码",
         description = "发送注册验证码到指定邮箱, 若modify为true, 则发送修改邮箱验证码, 默认为false"
     )
-    fun sendRegistrationVerificationCode(@RequestBody request: SendRegistrationVerificationCodeRequest) =
+    fun sendRegistrationVerificationCode(@RequestBody @Valid request: SendRegistrationVerificationCodeRequest) =
         userService.sendRegistrationVerificationCode(request.email, request.modify)
 
     @ServiceLog(description = "用户注册")
     @PostMapping("/register")
     @Tag(name = "用户接口")
     @Operation(summary = "用户注册", description = "除了真实姓名和头像地址其余必填")
-    fun register(@RequestBody request: RegisterRequest) = userService.register(request)
+    fun register(@RequestBody @Valid request: RegisterRequest) = userService.register(request)
 
     @ServiceLog(description = "用户登录")
     @PostMapping("/login")
@@ -63,7 +63,7 @@ class UserController(
         summary = "用户登录",
         description = "keep_login为true时, 保持登录状态, 否则token会在3天后失效, 默认为false"
     )
-    fun login(@RequestBody request: LoginRequest) = userService.login(request)
+    fun login(@RequestBody @Valid request: LoginRequest) = userService.login(request)
 
     @ServiceLog(description = "用户登出")
     @GetMapping("/logout")
@@ -84,6 +84,7 @@ class UserController(
 
     @ServiceLog(description = "根据用户id查询用户信息")
     @GetMapping("/selectUserByUserId")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
     @Tag(name = "用户接口")
     @Operation(summary = "根据用户id查询用户信息")
     fun selectUserByUserId(
@@ -97,7 +98,7 @@ class UserController(
     @PostMapping("/sendForgotPasswordEmail")
     @Tag(name = "用户接口")
     @Operation(summary = "发送找回密码验证码", description = "发送找回密码验证码到指定邮箱")
-    fun sendForgotPasswordEmail(@RequestBody request: SendForgotPasswordEmailRequest) =
+    fun sendForgotPasswordEmail(@RequestBody @Valid request: SendForgotPasswordEmailRequest) =
         userService.sendForgotPasswordEmail(request.email)
 
     @ServiceLog(description = "通过邮箱修改用户密码")
@@ -107,7 +108,7 @@ class UserController(
         summary = "通过邮箱修改用户密码",
         description = "需要提供邮箱, 验证码, 新密码和确认密码"
     )
-    fun changePasswordByEmail(@RequestBody request: ChangePasswordRequest) =
+    fun changePasswordByEmail(@RequestBody @Valid request: ChangePasswordRequest) =
         userService.changePassword(INT_0, request)
 
     @ServiceLog(description = "通过原密码修改用户密码")
@@ -118,7 +119,7 @@ class UserController(
         summary = "通过原密码修改用户密码",
         description = "需要提供原密码, 新密码和确认密码"
     )
-    fun changePasswordByOldPassword(@RequestBody request: ChangePasswordRequest) =
+    fun changePasswordByOldPassword(@RequestBody @Valid request: ChangePasswordRequest) =
         userService.changePassword(INT_1, request)
 
     @ServiceLog(description = "上传文件", printRequest = false)
@@ -140,7 +141,8 @@ class UserController(
         summary = "删除文件",
         description = "删除用户上传的文件, 使分享链接失效"
     )
-    fun deleteFile(@RequestBody request: DeleteFileRequest) = userService.deleteFile(request.url!!)
+    fun deleteFile(@RequestBody @Valid request: DeleteFileRequest) =
+        userService.deleteFile(request.url!!)
 
     @ServiceLog(description = "修改用户信息")
     @PostMapping("/modifyUserInfo")
@@ -150,7 +152,7 @@ class UserController(
         summary = "修改用户信息",
         description = "未填写的信息则保持原样不变，注意：此接口无法设置\"管理员可用\"字段"
     )
-    fun modifyUserInfo(@RequestBody request: ModifyUserInfoRequest): Response<Unit> {
+    fun modifyUserInfo(@RequestBody @Valid request: ModifyUserInfoRequest): Response<Unit> {
         request.id = null
         request.email = null
         request.status = null
@@ -165,7 +167,8 @@ class UserController(
         summary = "修改邮箱",
         description = "需要进行新邮箱验证和密码验证, 新邮箱验证发送验证码使用注册验证码接口即可"
     )
-    fun modifyEmail(@RequestBody request: ModifyEmailRequest) = userService.modifyEmail(request)
+    fun modifyEmail(@RequestBody @Valid request: ModifyEmailRequest) =
+        userService.modifyEmail(request)
 
     @ServiceLog(description = "查询用户列表表头")
     @GetMapping("/queryHeaders")
@@ -315,7 +318,7 @@ class UserController(
 
     @ServiceLog(description = "根据关键词查询用户信息")
     @GetMapping("/findByKeyword")
-    @AuthCheck
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
     @Tag(name = "用户接口")
     @Operation(
         summary = "根据关键词查询用户信息",
@@ -336,6 +339,6 @@ class UserController(
         summary = "修改指定用户信息",
         description = "未填写的信息则保持原样不变"
     )
-    fun modifyUserInfoAdvanced(@RequestBody request: ModifyUserInfoRequest) =
+    fun modifyUserInfoAdvanced(@RequestBody @Valid request: ModifyUserInfoRequest) =
         userService.modifyUserInfo(request)
 }

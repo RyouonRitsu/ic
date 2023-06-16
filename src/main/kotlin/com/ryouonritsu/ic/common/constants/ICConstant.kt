@@ -88,4 +88,14 @@ object ICConstant {
      * 用户
      */
     const val USER = "user"
+
+    /**
+     * 唯一键
+     */
+    const val UNIQUE = "unique"
+
+    /**
+     * 默认分隔符
+     */
+    const val DEFAULT_DELIMITER = ", "
 }
