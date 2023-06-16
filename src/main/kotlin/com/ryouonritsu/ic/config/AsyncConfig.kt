@@ -40,9 +40,9 @@ class AsyncConfig(
             setAwaitTerminationSeconds(this@AsyncConfig.awaitTerminationMillis)
             setRejectedExecutionHandler(ThreadPoolExecutor.CallerRunsPolicy())
             setTaskDecorator {
-                val userId = RequestContext.userId
+                val user = RequestContext.user
                 return@setTaskDecorator Runnable {
-                    RequestContext.userId = userId
+                    RequestContext.user = user
                     it.run()
                 }
             }

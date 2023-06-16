@@ -2,6 +2,8 @@ package com.ryouonritsu.ic.controller
 
 import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.annotation.ServiceLog
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_1
 import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.utils.DownloadUtils
 import com.ryouonritsu.ic.common.utils.RedisUtils
@@ -52,15 +54,7 @@ class UserController(
     @PostMapping("/register")
     @Tag(name = "用户接口")
     @Operation(summary = "用户注册", description = "除了真实姓名和头像地址其余必填")
-    fun register(@RequestBody request: RegisterRequest) = userService.register(
-        request.email,
-        request.verificationCode,
-        request.username,
-        request.password1,
-        request.password2,
-        request.avatar,
-        request.realName
-    )
+    fun register(@RequestBody request: RegisterRequest) = userService.register(request)
 
     @ServiceLog(description = "用户登录")
     @PostMapping("/login")
@@ -69,8 +63,7 @@ class UserController(
         summary = "用户登录",
         description = "keep_login为true时, 保持登录状态, 否则token会在3天后失效, 默认为false"
     )
-    fun login(@RequestBody request: LoginRequest) =
-        userService.login(request.username, request.password, request.keepLogin)
+    fun login(@RequestBody request: LoginRequest) = userService.login(request)
 
     @ServiceLog(description = "用户登出")
     @GetMapping("/logout")
@@ -78,7 +71,7 @@ class UserController(
     @Tag(name = "用户接口")
     @Operation(summary = "用户登出")
     fun logout(): Response<Any> {
-        redisUtils - "${RequestContext.userId}"
+        redisUtils - "${RequestContext.user!!.id}"
         return Response.success("登出成功")
     }
 
@@ -87,7 +80,7 @@ class UserController(
     @AuthCheck
     @Tag(name = "用户接口")
     @Operation(summary = "返回已登陆用户的信息", description = "需要用户登陆才能查询成功")
-    fun showInfo() = userService.showInfo(RequestContext.userId!!)
+    fun showInfo() = userService.showInfo(RequestContext.user!!.id)
 
     @ServiceLog(description = "根据用户id查询用户信息")
     @GetMapping("/selectUserByUserId")
@@ -98,7 +91,7 @@ class UserController(
             description = "用户id",
             required = true
         ) userId: Long
-    ) = userService.selectUserByUserId(userId)
+    ) = userService.showInfo(userId)
 
     @ServiceLog(description = "发送找回密码验证码")
     @PostMapping("/sendForgotPasswordEmail")
@@ -115,14 +108,7 @@ class UserController(
         description = "需要提供邮箱, 验证码, 新密码和确认密码"
     )
     fun changePasswordByEmail(@RequestBody request: ChangePasswordRequest) =
-        userService.changePassword(
-            0,
-            null,
-            request.password1,
-            request.password2,
-            request.email,
-            request.verifyCode
-        )
+        userService.changePassword(INT_0, request)
 
     @ServiceLog(description = "通过原密码修改用户密码")
     @PostMapping("/changePasswordByOldPassword")
@@ -133,14 +119,7 @@ class UserController(
         description = "需要提供原密码, 新密码和确认密码"
     )
     fun changePasswordByOldPassword(@RequestBody request: ChangePasswordRequest) =
-        userService.changePassword(
-            1,
-            request.oldPassword,
-            request.password1,
-            request.password2,
-            null,
-            null
-        )
+        userService.changePassword(INT_1, request)
 
     @ServiceLog(description = "上传文件", printRequest = false)
     @PostMapping("/uploadFile")
@@ -174,31 +153,9 @@ class UserController(
     fun modifyUserInfo(@RequestBody request: ModifyUserInfoRequest): Response<Unit> {
         request.id = null
         request.email = null
-        request.isDeleted = null
+        request.status = null
         return userService.modifyUserInfo(request)
     }
-
-    @ServiceLog(description = "添加收货地址")
-    @PostMapping("/addAddress")
-    @AuthCheck
-    @Tag(name = "用户接口")
-    @Operation(
-        summary = "添加收货地址",
-        description = "添加收货地址到最后一位"
-    )
-    fun addAddress(@RequestBody @Valid request: AddAddressRequest) =
-        userService.addAddress(request.address!!)
-
-    @ServiceLog(description = "删除收货地址")
-    @PostMapping("/deleteAddress")
-    @AuthCheck
-    @Tag(name = "用户接口")
-    @Operation(
-        summary = "删除收货地址",
-        description = "删除指定索引的收货地址"
-    )
-    fun deleteAddress(@RequestBody @Valid request: DeleteAddressRequest) =
-        userService.deleteAddress(request.index!!)
 
     @ServiceLog(description = "修改邮箱")
     @PostMapping("/modifyEmail")
@@ -208,8 +165,7 @@ class UserController(
         summary = "修改邮箱",
         description = "需要进行新邮箱验证和密码验证, 新邮箱验证发送验证码使用注册验证码接口即可"
     )
-    fun modifyEmail(@RequestBody request: ModifyEmailRequest) =
-        userService.modifyEmail(request.email, request.verifyCode, request.password)
+    fun modifyEmail(@RequestBody request: ModifyEmailRequest) = userService.modifyEmail(request)
 
     @ServiceLog(description = "查询用户列表表头")
     @GetMapping("/queryHeaders")

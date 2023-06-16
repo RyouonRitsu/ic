@@ -4,12 +4,13 @@ import com.alibaba.fastjson2.JSONObject
 import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
+import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.common.utils.TokenUtils
+import com.ryouonritsu.ic.repository.UserRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.web.method.HandlerMethod
 import org.springframework.web.servlet.HandlerInterceptor
@@ -20,10 +21,11 @@ import javax.servlet.http.HttpServletResponse
  * @author ryouonritsu
  */
 @Component
-class TokenInterceptor : HandlerInterceptor {
-    @Autowired
-    lateinit var redisUtils: RedisUtils
-    val log: Logger = LoggerFactory.getLogger(TokenInterceptor::class.java)
+class TokenInterceptor(
+    private val redisUtils: RedisUtils,
+    private val userRepository: UserRepository
+) : HandlerInterceptor {
+    private val log: Logger = LoggerFactory.getLogger(TokenInterceptor::class.java)
 
     override fun preHandle(
         request: HttpServletRequest,
@@ -49,7 +51,8 @@ class TokenInterceptor : HandlerInterceptor {
             log.info("现有的token: $token")
             if (redisUtils["$userId"] == token && result) {
                 log.info("通过拦截器")
-                RequestContext.userId = userId
+                RequestContext.user = userRepository.findByIdAndStatus(userId)
+                    ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
                 return true
             } else {
                 log.info("已经存在一个token，未通过拦截器")

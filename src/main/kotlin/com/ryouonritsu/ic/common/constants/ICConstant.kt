@@ -83,4 +83,9 @@ object ICConstant {
      * 用户ID
      */
     const val USER_ID = "userId"
+
+    /**
+     * 用户
+     */
+    const val USER = "user"
 }

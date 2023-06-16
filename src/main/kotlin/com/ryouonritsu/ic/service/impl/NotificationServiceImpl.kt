@@ -10,6 +10,7 @@ import com.ryouonritsu.ic.domain.protocol.request.UnsubscribeRequest
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.Event
 import com.ryouonritsu.ic.entity.Subscriber
+import com.ryouonritsu.ic.manager.db.UserManager
 import com.ryouonritsu.ic.repository.EventRepository
 import com.ryouonritsu.ic.repository.SubscriberRepository
 import com.ryouonritsu.ic.service.NotificationService
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit
 @Service
 class NotificationServiceImpl(
     private val redisUtils: RedisUtils,
-    private val userServiceImpl: UserServiceImpl,
+    private val userManager: UserManager,
     private val eventRepository: EventRepository,
     private val subscriberRepository: SubscriberRepository,
     private val transactionTemplate: TransactionTemplate,
@@ -55,7 +56,7 @@ class NotificationServiceImpl(
                 log.info("[publish] sending email to ${it.email}")
 
                 // retry at most 3 times
-                statuses += userServiceImpl.retrySendEmail(
+                statuses += userManager.retrySendEmail(
                     it.email,
                     "[${event.tag}] ${event.name}",
                     event.message
@@ -89,7 +90,7 @@ class NotificationServiceImpl(
             email = request.email!!
         )
         subscriberRepository.save(subscriber)
-        userServiceImpl.sendEmail(
+        userManager.sendEmail(
             subscriber.email,
             "Subscribe Success",
             "您已成功订阅 [${subscriber.tag}] 事件通知"
@@ -104,7 +105,7 @@ class NotificationServiceImpl(
         val f = asyncTaskExecutor.submitListenable {
             val events = eventRepository.findByTagAndStatus(subscriber.tag, true)
             events.forEach {
-                val published = userServiceImpl.retrySendEmail(
+                val published = userManager.retrySendEmail(
                     subscriber.email,
                     "[${it.tag}] ${it.name}",
                     it.message
@@ -131,11 +132,11 @@ class NotificationServiceImpl(
     override fun unsubscribe(request: UnsubscribeRequest): Response<Unit> {
         val subscriber = subscriberRepository.findByTagAndEmail(request.tag!!, request.email!!)
             ?: return Response.failure("该邮箱尚未订阅该事件通知")
-        val (success, response) = userServiceImpl.verifyCodeCheck(request.email, request.verificationCode)
+        val (success, response) = userManager.verifyCodeCheck(request.email, request.verificationCode)
         if (!success) return response!!
         subscriber.status = false
         subscriberRepository.save(subscriber)
-        userServiceImpl.sendEmail(
+        userManager.sendEmail(
             subscriber.email,
             "Unsubscribe Success",
             "您已成功退订 [${subscriber.tag}] 事件通知"
@@ -148,7 +149,7 @@ class NotificationServiceImpl(
             if (it.isEmpty()) return Response.failure("该邮箱尚未订阅任何事件通知")
         }
         val verificationCode = (1..6).joinToString("") { "${(0..9).random()}" }
-        val success = userServiceImpl.sendEmail(email, "Verification Code", verificationCode)
+        val success = userManager.sendEmail(email, "Verification Code", verificationCode)
         return if (success) {
             redisUtils.set(email, verificationCode, 5, TimeUnit.MINUTES)
             Response.success("验证码已发送")

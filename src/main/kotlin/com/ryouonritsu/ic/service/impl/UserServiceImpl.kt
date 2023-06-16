@@ -1,7 +1,6 @@
 package com.ryouonritsu.ic.service.impl
 
-import com.alibaba.fastjson2.to
-import com.alibaba.fastjson2.toJSONString
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
 import com.ryouonritsu.ic.common.constants.TemplateType
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
@@ -16,11 +15,13 @@ import com.ryouonritsu.ic.domain.dto.SchoolInfoDTO
 import com.ryouonritsu.ic.domain.dto.SocialInfoDTO
 import com.ryouonritsu.ic.domain.dto.UserDTO
 import com.ryouonritsu.ic.domain.dto.UserInfoDTO
-import com.ryouonritsu.ic.domain.protocol.request.ModifyUserInfoRequest
+import com.ryouonritsu.ic.domain.protocol.request.*
 import com.ryouonritsu.ic.domain.protocol.response.ListUserResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
+import com.ryouonritsu.ic.entity.InvitationCode
 import com.ryouonritsu.ic.entity.User
 import com.ryouonritsu.ic.entity.UserFile
+import com.ryouonritsu.ic.manager.db.UserManager
 import com.ryouonritsu.ic.repository.*
 import com.ryouonritsu.ic.service.TableTemplateService
 import com.ryouonritsu.ic.service.UserService
@@ -34,21 +35,15 @@ import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.TimeUnit
-import javax.mail.Authenticator
-import javax.mail.PasswordAuthentication
-import javax.mail.Session
-import javax.mail.Transport
-import javax.mail.internet.InternetAddress
-import javax.mail.internet.MimeMessage
 import javax.persistence.criteria.Predicate
 import kotlin.io.path.Path
-import kotlin.jvm.optionals.getOrElse
 
 /**
  * @author ryouonritsu
@@ -56,23 +51,16 @@ import kotlin.jvm.optionals.getOrElse
 @Service
 class UserServiceImpl(
     private val redisUtils: RedisUtils,
+    private val userManager: UserManager,
     private val userRepository: UserRepository,
     private val userFileRepository: UserFileRepository,
+    private val invitationCodeRepository: InvitationCodeRepository,
     private val tableTemplateService: TableTemplateService,
+    private val transactionTemplate: TransactionTemplate,
     @Value("\${static.file.prefix}")
     private val staticFilePrefix: String,
-    @Value("\${mail.service.account}")
-    private val mailServiceAccount: String,
-    @Value("\${mail.service.password}")
-    private val mailServicePassword: String,
-    @Value("\${mail.service.nick}")
-    private val mailServiceNick: String,
-    @Value("\${mail.smtp.auth}")
-    private val mailSmtpAuth: String,
-    @Value("\${mail.smtp.host}")
-    private val mailSmtpHost: String,
-    @Value("\${mail.smtp.port}")
-    private val mailSmtpPort: String,
+    @Value("\${server.port}")
+    private val serverPort: Int,
     @Value("\${mail.text.change-email}")
     private val mailTextChangeEmail: String,
     @Value("\${mail.text.change-email.notice}")
@@ -98,51 +86,6 @@ class UserServiceImpl(
         } catch (e: Exception) {
             Pair(500, e.message)
         }
-    }
-
-    internal fun retrySendEmail(
-        email: String,
-        subject: String,
-        html: String,
-        times: Int = 3
-    ): Boolean {
-        var success = false
-
-        for (i in 1..times) {
-            success = sendEmail(email, subject, html)
-            if (success) break
-        }
-
-        return success
-    }
-
-    internal fun sendEmail(email: String, subject: String, html: String): Boolean {
-        val account = mailServiceAccount
-        val password = mailServicePassword
-        val nick = mailServiceNick
-        val props = mapOf(
-            "mail.smtp.auth" to mailSmtpAuth,
-            "mail.smtp.host" to mailSmtpHost,
-            "mail.smtp.port" to mailSmtpPort
-        )
-        val properties = Properties().apply { putAll(props) }
-        val authenticator = object : Authenticator() {
-            override fun getPasswordAuthentication(): PasswordAuthentication {
-                return PasswordAuthentication(account, password)
-            }
-        }
-        val mailSession = Session.getInstance(properties, authenticator)
-        val htmlMessage = MimeMessage(mailSession).apply {
-            setFrom(InternetAddress(account, nick, "UTF-8"))
-            setRecipient(MimeMessage.RecipientType.TO, InternetAddress(email, "", "UTF-8"))
-            setSubject(subject, "UTF-8")
-            setContent(html, "text/html; charset=UTF-8")
-        }
-        log.info("Sending email to $email")
-        return runCatching { Transport.send(htmlMessage) }
-            .onFailure {
-                log.error("[UserService.sendEmail] Send email to $email failed", it)
-            }.isSuccess
     }
 
     private fun check(
@@ -184,8 +127,9 @@ class UserServiceImpl(
     ): Response<Unit> {
         // 此处需替换成服务器地址!!!
 //        val (code, html) = getHtml("http://101.42.171.88:8090/registration_verification?verification_code=$verification_code")
-        val (code, html) = getHtml("http://localhost:8090/$template?verification_code=$verificationCode")
-        val success = if (code == 200 && html != null) sendEmail(email, subject, html) else false
+        val (code, html) = getHtml("http://localhost:$serverPort/$template?verification_code=$verificationCode")
+        val success = if (code == 200 && html != null) userManager.sendEmail(email, subject, html)
+        else false
         return if (success) {
             redisUtils.set(email, verificationCode, 5, TimeUnit.MINUTES)
             Response.success("验证码已发送")
@@ -210,86 +154,72 @@ class UserServiceImpl(
         )
     }
 
-    internal fun verifyCodeCheck(email: String, verifyCode: String?): Pair<Boolean, Response<Unit>?> {
-        val vc = redisUtils[email]
-        if (vc.isNullOrBlank()) return Pair(
-            false, Response.failure("验证码无效")
+    override fun generateInvitationCode(): Response<String> {
+        val codes = invitationCodeRepository.findAllByUserIdAndStatus(RequestContext.user!!.id)
+        if (codes.isNotEmpty())
+            return Response.success(codes[INT_0].code)
+
+        val code = InvitationCode(
+            userId = RequestContext.user!!.id,
+            code = UUID.randomUUID().toString().replace("-", "")
         )
-        if (verifyCode != vc) return Pair(
-            false, Response.failure("验证码错误, 请再试一次")
-        )
-        return Pair(true, null)
+        transactionTemplate.execute { invitationCodeRepository.save(code) }
+        return Response.success(code.code)
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
-    override fun register(
-        email: String?,
-        verificationCode: String?,
-        username: String?,
-        password1: String?,
-        password2: String?,
-        avatar: String,
-        realName: String
-    ): Response<Unit> {
-        if (email.isNullOrBlank()) return Response.failure("邮箱不能为空")
-        if (verificationCode.isNullOrBlank()) return Response.failure("验证码不能为空")
-        if (username.isNullOrBlank()) return Response.failure("用户名不能为空")
-        if (password1.isNullOrBlank()) return Response.failure("密码不能为空")
-        if (password2.isNullOrBlank()) return Response.failure("确认密码不能为空")
-        val (result, message) = check(email, username, password1, realName)
+    override fun register(request: RegisterRequest): Response<Unit> {
+        val (result, message) = check(
+            request.email!!, request.username!!, request.password1!!, request.legalName!!
+        )
         if (!result && message != null) return message
-        val t = userRepository.findByEmail(email)
+        val t = userRepository.findByEmail(request.email)
         if (t != null) return Response.failure("该邮箱已被注册")
-        return runCatching {
-            val (re, msg) = verifyCodeCheck(email, verificationCode)
-            if (!re && msg != null) return@runCatching msg
-            if (redisUtils[email].isNullOrBlank()) return Response.failure("该邮箱与验证邮箱不匹配")
-            val temp = userRepository.findByUsername(username)
-            if (temp != null) return Response.failure("用户名已存在")
-            if (password1 != password2) return Response.failure("两次输入的密码不一致")
-            userRepository.save(
-                User(
-                    email = email,
-                    username = username,
-                    password = MD5Util.encode(password1),
-                    avatar = avatar
-                )
+        val codes = invitationCodeRepository.findAllByCodeAndStatus(request.invitationCode!!)
+        if (codes.isEmpty()) return Response.failure("邀请码无效")
+        val (re, msg) = userManager.verifyCodeCheck(request.email, request.verificationCode)
+        if (!re && msg != null) return msg
+        if (redisUtils[request.email].isNullOrBlank())
+            return Response.failure("该邮箱与验证邮箱不匹配")
+        val temp = userRepository.findByIdentifier(request.username)
+        if (temp != null) return Response.failure("用户名已存在")
+        if (request.password1 != request.password2)
+            return Response.failure("两次输入的密码不一致")
+        userRepository.save(
+            User(
+                email = request.email,
+                username = request.username,
+                password = MD5Util.encode(request.password1),
+                avatar = request.avatar,
+                legalName = request.legalName,
+                userType = User.UserType.ADMIN()
             )
-            Response.success("注册成功")
-        }.onFailure { log.error(it.stackTraceToString()) }
-            .getOrDefault(Response.failure("注册失败, 发生意外错误"))
+        )
+        return Response.success("注册成功")
     }
 
-    override fun login(
-        username: String?,
-        password: String?,
-        keepLogin: Boolean
-    ): Response<List<Map<String, String>>> {
-        if (username.isNullOrBlank()) return Response.failure("用户名不能为空")
-        if (password.isNullOrBlank()) return Response.failure("密码不能为空")
-        return runCatching {
-            val user =
-                userRepository.findByUsername(username) ?: return Response.failure("用户不存在")
-            if (MD5Util.encode(password) != user.password) return Response.failure("密码错误")
-            val token = TokenUtils.sign(user)
-            if (keepLogin) redisUtils["${user.id}"] = token
-            else redisUtils.set("${user.id}", token, 3, TimeUnit.DAYS)
-            Response.success(
-                "登录成功", listOf(
-                    mapOf(
-                        "token" to token,
-                        "user_id" to "${user.id}"
-                    )
+    override fun login(request: LoginRequest): Response<List<Map<String, String>>> {
+        val user = userRepository.findByIdentifier(request.identifier!!)
+            ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
+        if (MD5Util.encode(request.password) != user.password)
+            return Response.failure("密码错误")
+        val token = TokenUtils.sign(user)
+        if (request.keepLogin) redisUtils["${user.id}"] = token
+        else redisUtils.set("${user.id}", token, 3, TimeUnit.DAYS)
+        return Response.success(
+            "登录成功", listOf(
+                mapOf(
+                    "token" to token,
+                    "user_id" to "${user.id}"
                 )
             )
-        }.onFailure { log.error(it.stackTraceToString()) }
-            .getOrDefault(Response.failure("登录失败, 发生意外错误"))
+        )
     }
 
-    override fun showInfo(userId: Long): Response<List<UserDTO>> {
+    override fun showInfo(userId: Long): Response<UserDTO> {
         return runCatching {
             val user = userRepository.findById(userId).get()
-            Response.success("获取成功", listOf(user.toDTO()))
+            Response.success("获取成功", user.toDTO())
         }.onFailure {
             if (it is NoSuchElementException) {
                 redisUtils - "$userId"
@@ -299,16 +229,6 @@ class UserServiceImpl(
         }.getOrDefault(
             Response.failure("获取失败, 发生意外错误")
         )
-    }
-
-    override fun selectUserByUserId(userId: Long): Response<List<UserDTO>> {
-        return runCatching {
-            val user = userRepository.findById(userId).get()
-            Response.success("获取成功", listOf(user.toDTO()))
-        }.onFailure {
-            if (it is NoSuchElementException) return Response.failure("数据库中没有此用户")
-            log.error(it.stackTraceToString())
-        }.getOrDefault(Response.failure("获取失败, 发生意外错误"))
     }
 
     override fun sendForgotPasswordEmail(email: String?): Response<Unit> {
@@ -326,28 +246,18 @@ class UserServiceImpl(
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
-    override fun changePassword(
-        mode: Int?,
-        oldPassword: String?,
-        password1: String?,
-        password2: String?,
-        email: String?,
-        verifyCode: String?
-    ): Response<Unit> {
+    override fun changePassword(mode: Int, request: ChangePasswordRequest): Response<Unit> {
         when (mode) {
             0 -> {
-                val (re, msg) = emailCheck(email)
+                val (re, msg) = emailCheck(request.email)
                 if (!re && msg != null) return msg
-                val (result, message) = verifyCodeCheck(email!!, verifyCode)
+                val (result, message) = userManager.verifyCodeCheck(request.email!!, request.verifyCode)
                 if (!result && message != null) return message
-                if (password1.isNullOrBlank() || password2.isNullOrBlank()) return Response.failure(
-                    "密码不能为空"
-                )
-                if (password1 != password2) return Response.failure("两次密码不一致")
+                if (request.password1 != request.password2) return Response.failure("两次密码不一致")
                 return runCatching {
-                    val user = userRepository.findByEmail(email)
+                    val user = userRepository.findByEmail(request.email)
                         ?: return Response.failure("该邮箱未被注册, 发生意外错误, 请检查数据库")
-                    user.password = MD5Util.encode(password1)
+                    user.password = MD5Util.encode(request.password1)
                     userRepository.save(user)
                     redisUtils - "${user.id}"
                     Response.success<Unit>("修改成功")
@@ -358,22 +268,22 @@ class UserServiceImpl(
             1 -> {
                 return runCatching {
                     val user = userRepository.findById(
-                        RequestContext.userId
+                        RequestContext.user?.id
                             ?: return Response.failure("无法验证用户信息, 请登录!")
                     ).get()
-                    if (password1.isNullOrBlank() || password2.isNullOrBlank() || oldPassword.isNullOrBlank()) return Response.failure(
-                        "密码不能为空"
-                    )
-                    if (MD5Util.encode(oldPassword) != user.password) return Response.failure("原密码错误")
-                    if (password1.length < 8 || password1.length > 30) return Response.failure("密码长度必须在8-30位之间")
-                    if (password1 != password2) return Response.failure("两次密码不一致")
-                    user.password = MD5Util.encode(password1)
+                    if (MD5Util.encode(request.oldPassword) != user.password)
+                        return Response.failure("原密码错误")
+                    if (request.password1!!.length < 8 || request.password1.length > 30)
+                        return Response.failure("密码长度必须在8-30位之间")
+                    if (request.password1 != request.password2)
+                        return Response.failure("两次密码不一致")
+                    user.password = MD5Util.encode(request.password1)
                     userRepository.save(user)
                     redisUtils - "${user.id}"
                     Response.success<Unit>("修改成功")
                 }.onFailure {
                     if (it is NoSuchElementException) {
-                        redisUtils - "${RequestContext.userId}"
+                        redisUtils - "${RequestContext.user!!.id}"
                         return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
                     }
                     log.error(it.stackTraceToString())
@@ -393,13 +303,13 @@ class UserServiceImpl(
         return runCatching {
             if (file.size >= 10 * 1024 * 1024) return Response.failure("上传失败, 文件大小超过最大限制10MB！")
             val time = System.currentTimeMillis()
-            val userId = RequestContext.userId
+            val userId = RequestContext.user?.id
             val fileDir = "static/file/${userId}"
             val fileName = "${time}_${file.originalFilename}"
             val filePath = "$fileDir/$fileName"
             if (!File(fileDir).exists()) File(fileDir).mkdirs()
             file.transferTo(Path(filePath))
-            val fileUrl = "http://$staticFilePrefix:8090/file/${userId}/${fileName}"
+            val fileUrl = "http://$staticFilePrefix:$serverPort/file/${userId}/${fileName}"
             userFileRepository.save(
                 UserFile(
                     url = fileUrl,
@@ -422,9 +332,8 @@ class UserServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun deleteFile(url: String): Response<Unit> {
         return try {
-            val file = userFileRepository.findByUrl(url) ?: return Response.failure(
-                "文件不存在"
-            )
+            val file = userFileRepository.findByUrl(url)
+                ?: return Response.failure("文件不存在")
             File(file.filePath).delete()
             userFileRepository.delete(file)
             Response.failure("删除成功")
@@ -437,15 +346,16 @@ class UserServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun modifyUserInfo(request: ModifyUserInfoRequest): Response<Unit> {
         return runCatching {
-            val user = userRepository.findById(request.id ?: RequestContext.userId!!).get()
+            val user = userRepository.findById(request.id ?: RequestContext.user!!.id).get()
             if (!request.email.isNullOrBlank()) user.email = request.email!!
             if (!request.username.isNullOrBlank()) {
-                val t = userRepository.findByUsername(request.username)
+                val t = userRepository.findByIdentifier(request.username)
                 if (t != null) return Response.failure("用户名已存在")
                 if (request.username.length > 50) return Response.failure("用户名长度不能超过50")
                 user.username = request.username
             }
             if (!request.avatar.isNullOrBlank()) user.avatar = request.avatar
+            if (!request.legalName.isNullOrBlank()) user.legalName = request.legalName
             if (!request.gender.isNullOrBlank()) user.gender =
                 User.Gender.getByDesc(request.gender).code
             if (!request.birthday.isNullOrBlank()) {
@@ -456,27 +366,16 @@ class UserServiceImpl(
                     return Response.failure("生日格式错误, 应为yyyy-MM-dd")
                 }
             }
+            if (!request.contactName.isNullOrBlank()) user.contactName = request.contactName
             if (!request.phone.isNullOrBlank()) user.phone = request.phone
             if (!request.location.isNullOrBlank()) user.location = request.location
-            if (request.userInfo != null) {
-                val userInfo = user.userInfo.to<UserInfoDTO>()
-                ReflectUtils.copyPropertyNonNull(
-                    SchoolInfoDTO::class,
-                    request.userInfo.schoolInfo,
-                    userInfo.schoolInfo
-                )
-                ReflectUtils.copyPropertyNonNull(
-                    SocialInfoDTO::class,
-                    request.userInfo.socialInfo,
-                    userInfo.socialInfo
-                )
-                user.userInfo = userInfo.toJSONString()
-            }
+            if (!request.companyName.isNullOrBlank()) user.companyName = request.companyName
+            if (!request.position.isNullOrBlank()) user.position = request.position
             userRepository.save(user)
             Response.success<Unit>("修改成功")
         }.onFailure {
             if (it is NoSuchElementException) {
-                redisUtils - "${RequestContext.userId}"
+                redisUtils - "${RequestContext.user!!.id}"
                 return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
             }
             log.error(it.stackTraceToString())
@@ -484,67 +383,37 @@ class UserServiceImpl(
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
-    override fun modifyEmail(
-        email: String?,
-        verifyCode: String?,
-        password: String?
-    ): Response<Unit> {
+    override fun modifyEmail(request: ModifyEmailRequest): Response<Unit> {
         return runCatching {
-            val user = userRepository.findById(RequestContext.userId!!).get()
-            val (result, message) = emailCheck(email)
+            val user = userRepository.findById(RequestContext.user!!.id).get()
+            val (result, message) = emailCheck(request.email)
             if (!result && message != null) return message
-            val t = userRepository.findByEmail(email!!)
+            val t = userRepository.findByEmail(request.email!!)
             if (t != null) return Response.failure("该邮箱已被注册")
-            val (re, msg) = verifyCodeCheck(email, verifyCode)
+            val (re, msg) = userManager.verifyCodeCheck(request.email, request.verifyCode)
             if (!re && msg != null) return@runCatching msg
-            if (redisUtils[email].isNullOrBlank()) return Response.failure("该邮箱与验证邮箱不匹配")
-            if (MD5Util.encode(password) != user.password) return Response.failure("密码错误")
-            val (code, html) = getHtml("http://localhost:8090/change_email?email=${email}")
+            if (redisUtils[request.email].isNullOrBlank())
+                return Response.failure("该邮箱与验证邮箱不匹配")
+            if (MD5Util.encode(request.password) != user.password) return Response.failure("密码错误")
+            val (code, html) = getHtml("http://localhost:$serverPort/change_email?email=${request.email}")
             val success =
-                if (code == 200 && html != null) sendEmail(
+                if (code == 200 && html != null) userManager.sendEmail(
                     user.email,
                     mailTextChangeEmailNotice,
                     html
                 ) else false
             if (!success) throw Exception("邮件发送失败")
-            user.email = email
+            user.email = request.email
             userRepository.save(user)
             Response.success("修改成功")
         }.onFailure {
             if (it is NoSuchElementException) {
-                redisUtils - "${RequestContext.userId}"
+                redisUtils - "${RequestContext.user!!.id}"
                 return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
             }
             if (it.message != null) return Response.failure("${it.message}")
             else log.error(it.stackTraceToString())
         }.getOrDefault(Response.failure("修改失败, 发生意外错误"))
-    }
-
-    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
-    override fun addAddress(address: String): Response<Unit> {
-        val user = userRepository.findById(RequestContext.userId!!).getOrElse {
-            redisUtils - "${RequestContext.userId}"
-            return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
-        }
-        val userInfo = user.userInfo.to<UserInfoDTO>()
-        userInfo.shippingAddress += address
-        user.userInfo = userInfo.toJSONString()
-        userRepository.save(user)
-        return Response.success("添加成功")
-    }
-
-    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
-    override fun deleteAddress(index: Int): Response<Unit> {
-        val user = userRepository.findById(RequestContext.userId!!).getOrElse {
-            redisUtils - "${RequestContext.userId}"
-            return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
-        }
-        val userInfo = user.userInfo.to<UserInfoDTO>()
-        if (index !in userInfo.shippingAddress.indices) return Response.failure("索引超出范围")
-        userInfo.shippingAddress.removeAt(index)
-        user.userInfo = userInfo.toJSONString()
-        userRepository.save(user)
-        return Response.success("删除成功")
     }
 
     override fun queryHeaders(): Response<List<ColumnDSL>> {

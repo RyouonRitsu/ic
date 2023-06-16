@@ -7,7 +7,7 @@ import javax.validation.constraints.NotBlank
 /**
  * @author ryouonritsu
  */
-@Schema(description = "用户注册请求")
+@Schema(description = "注册请求")
 data class RegisterRequest(
     @field:NotBlank
     @field:Email
@@ -16,6 +16,9 @@ data class RegisterRequest(
     @field:NotBlank
     @Schema(description = "验证码", example = "123456", required = true)
     val verificationCode: String?,
+    @field:NotBlank
+    @Schema(description = "邀请码", example = "123456", required = true)
+    val invitationCode: String?,
     @field:NotBlank
     @Schema(description = "用户名", example = "Ritsu", required = true)
     val username: String?,
@@ -27,6 +30,7 @@ data class RegisterRequest(
     val password2: String?,
     @Schema(description = "个人头像", example = "https://128.0.0.1/img/bd_logo1.png")
     val avatar: String = "",
-    @Schema(description = "真实姓名", example = "Ryouonritsu")
-    val realName: String = ""
+    @field:NotBlank
+    @Schema(description = "真实姓名", example = "Ryouonritsu", required = true)
+    val legalName: String?
 )

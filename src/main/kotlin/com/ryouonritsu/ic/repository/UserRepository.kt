@@ -13,24 +13,26 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface UserRepository : JpaRepositoryImplementation<User, Long> {
-    @Query("SELECT u FROM User u WHERE u.username = ?1 AND u.isDeleted = false")
-    fun findByUsername(username: String): User?
+    fun findByIdAndStatus(id: Long, status: Boolean = true): User?
 
-    @Query("SELECT u FROM User u WHERE u.email = ?1 AND u.isDeleted = false")
+    @Query("SELECT u FROM User u WHERE (u.username = ?1 OR u.email = ?1) AND u.status = true")
+    fun findByIdentifier(username: String): User?
+
+    @Query("SELECT u FROM User u WHERE u.email = ?1 AND u.status = true")
     fun findByEmail(email: String): User?
 
     @Query(
         """
             SELECT *
             FROM user
-            WHERE is_deleted = 0
-                AND (id = ?1 OR username LIKE CONCAT('%', ?1, '%') OR real_name LIKE CONCAT('%', ?1, '%'))
+            WHERE status = 1
+                AND (id = ?1 OR username LIKE CONCAT('%', ?1, '%') OR legal_name LIKE CONCAT('%', ?1, '%'))
             LIMIT 10
         """,
         nativeQuery = true
     )
     fun findByKeyword(keyword: String): List<User>
 
-    @Query("SELECT u FROM User u WHERE u.isDeleted = false ORDER BY u.createTime")
+    @Query("SELECT u FROM User u WHERE u.status = true ORDER BY u.createTime")
     fun list(pageable: Pageable = PageRequest.of(0, 10)): Page<User>
 }
