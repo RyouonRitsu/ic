@@ -252,7 +252,6 @@ class UserServiceImpl(
                     email = email,
                     username = username,
                     password = MD5Util.encode(password1),
-                    realName = realName,
                     avatar = avatar
                 )
             )
@@ -447,10 +446,6 @@ class UserServiceImpl(
                 user.username = request.username
             }
             if (!request.avatar.isNullOrBlank()) user.avatar = request.avatar
-            if (!request.realName.isNullOrBlank()) {
-                if (request.realName.length > 50) return Response.failure("真实姓名长度不能超过50")
-                user.realName = request.realName
-            }
             if (!request.gender.isNullOrBlank()) user.gender =
                 User.Gender.getByDesc(request.gender).code
             if (!request.birthday.isNullOrBlank()) {
@@ -463,9 +458,6 @@ class UserServiceImpl(
             }
             if (!request.phone.isNullOrBlank()) user.phone = request.phone
             if (!request.location.isNullOrBlank()) user.location = request.location
-            if (!request.educationalBackground.isNullOrBlank())
-                user.educationalBackground = request.educationalBackground
-            if (!request.description.isNullOrBlank()) user.description = request.description
             if (request.userInfo != null) {
                 val userInfo = user.userInfo.to<UserInfoDTO>()
                 ReflectUtils.copyPropertyNonNull(
@@ -480,8 +472,6 @@ class UserServiceImpl(
                 )
                 user.userInfo = userInfo.toJSONString()
             }
-            if (request.isAdmin != null) user.isAdmin = request.isAdmin
-            if (request.isDeleted != null) user.isDeleted = request.isDeleted!!
             userRepository.save(user)
             Response.success<Unit>("修改成功")
         }.onFailure {

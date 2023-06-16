@@ -4,6 +4,7 @@ import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.common.utils.RequestContext
+import com.ryouonritsu.ic.entity.User
 import com.ryouonritsu.ic.repository.UserRepository
 import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.Aspect
@@ -47,7 +48,8 @@ class AuthCheckAspect(
         if (AuthEnum.ADMIN in authCheck.auth) {
             val user = userRepository.findById(RequestContext.userId!!)
                 .orElseThrow { throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST) }
-            if (!user.isAdmin) throw ServiceException(ExceptionEnum.PERMISSION_DENIED)
+            if (user.userType != User.UserType.ADMIN())
+                throw ServiceException(ExceptionEnum.PERMISSION_DENIED)
         }
     }
 }

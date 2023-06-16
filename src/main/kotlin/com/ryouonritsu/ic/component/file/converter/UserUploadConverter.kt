@@ -42,12 +42,10 @@ object UserUploadConverter {
             username = studentId,
             password = password,
             email = email,
-            realName = realName,
             gender = User.Gender.getByDesc(gender).code,
             phone = phone,
             birthday = birthday,
             location = location,
-            description = description
         )
         val schoolInfo = SchoolInfoDTO(
             studentId = studentId,
