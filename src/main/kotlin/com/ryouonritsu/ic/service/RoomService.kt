@@ -8,4 +8,5 @@ import javax.xml.ws.Response
  */
 interface RoomService {
     fun showInfo(roomId: Long): Response<List<RoomDTO>>
+    fun selectRoomById(roomId: Long): Response<List<RoomDTO>>
 }
