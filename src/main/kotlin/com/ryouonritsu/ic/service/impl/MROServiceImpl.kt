@@ -105,8 +105,8 @@ class MROServiceImpl(
     override fun adminModifyMRO(request: AdminModifyMRORequest): Response<Unit> {
         return runCatching {
             userRepository.findById(RequestContext.user!!.id).get()
-            val mro = mroRepository.findById(request.id!!)
-                ?: return Response.failure("该邮箱未被注册, 发生意外错误, 请检查数据库")
+            val mro = mroRepository.findByIdAndStatus(request.id!!.toLong())
+                ?: return Response.failure("维修工单不存在")
             mro.workerId = request.workerId!!.toLong()
             mro.actualTime = request.actualTime!!
             mroRepository.save(mro)
