@@ -41,7 +41,7 @@ class MRO(
     var actualTime: String = JSONObject().toJSONString(),
     @Column(columnDefinition = "LONGTEXT COMMENT '问题解决方法'", nullable = false)
     var resolvent: String = "",
-    @Column(name = "maintenance_time",columnDefinition = "TEXT COMMENT '具体维修时间'", nullable = false)
+    @Column(name = "maintenance_time", columnDefinition = "TEXT COMMENT '具体维修时间'", nullable = false)
     var maintenanceTime: String = JSONObject().toJSONString(),
     @Column(
         name = "is_solved",
@@ -69,6 +69,7 @@ class MRO(
     fun toDTO() = MRODTO(
         id = "$id",
         customId = "$customId",
+        userInfo = null,
         workerId = "$workerId",
         roomId = "$roomId",
         problem = problem,

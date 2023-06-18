@@ -1,6 +1,5 @@
 package com.ryouonritsu.ic.service.impl
 
-import com.ryouonritsu.ic.common.utils.MD5Util
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
@@ -43,30 +42,41 @@ class MROServiceImpl(
         page: Int,
         limit: Int
     ): Response<ListMROResponse> {
-        val specification = Specification<MRO> { root, query, cb ->
-            val predicates = mutableListOf<Predicate>()
-            if (!id.isNullOrBlank()) {
-                predicates += cb.equal(root.get<Long>("id"), id)
+        return runCatching {
+            val specification = Specification<MRO> { root, query, cb ->
+                val predicates = mutableListOf<Predicate>()
+                if (!id.isNullOrBlank()) {
+                    predicates += cb.equal(root.get<Long>("id"), id)
+                }
+                if (!customId.isNullOrBlank()) {
+                    predicates += cb.equal(root.get<Long>("customId"), customId)
+                }
+                if (!workerId.isNullOrBlank()) {
+                    predicates += cb.equal(root.get<Long>("workerId"), workerId)
+                }
+                if (!roomId.isNullOrBlank()) {
+                    predicates += cb.equal(root.get<Long>("roomId"), roomId)
+                }
+                if (isSolved != null) {
+                    predicates += cb.equal(root.get<Boolean>("isSolved"), isSolved)
+                }
+                predicates += cb.equal(root.get<Boolean>("status"), true)
+                query.where(*predicates.toTypedArray()).restriction
             }
-            if (!customId.isNullOrBlank()) {
-                predicates += cb.equal(root.get<Long>("customId"), customId)
+            val result = mroRepository.findAll(specification, PageRequest.of(page - 1, limit))
+            val total = result.totalElements
+            val orders = result.content.map { it.toDTO() }
+            orders.forEach {
+                it.userInfo = userRepository.findById(it.customId.toLong()).get().toDTO()
             }
-            if (!workerId.isNullOrBlank()) {
-                predicates += cb.equal(root.get<Long>("workerId"), workerId)
+            Response.success(ListMROResponse(total, orders))
+        }.onFailure {
+            if (it is NoSuchElementException) {
+                redisUtils - "${RequestContext.user!!.id}"
+                return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
             }
-            if (!roomId.isNullOrBlank()) {
-                predicates += cb.equal(root.get<Long>("roomId"), roomId)
-            }
-            if (isSolved != null) {
-                predicates += cb.equal(root.get<Boolean>("isSolved"), isSolved)
-            }
-            predicates += cb.equal(root.get<Boolean>("status"), true)
-            query.where(*predicates.toTypedArray()).restriction
-        }
-        val result = mroRepository.findAll(specification, PageRequest.of(page - 1, limit))
-        val total = result.totalElements
-        val users = result.content.map { it.toDTO() }
-        return Response.success(ListMROResponse(total, users))
+            log.error(it.stackTraceToString())
+        }.getOrDefault(Response.failure("创建失败, 发生意外错误"))
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
