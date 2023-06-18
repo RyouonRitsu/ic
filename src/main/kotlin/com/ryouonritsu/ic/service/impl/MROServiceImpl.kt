@@ -1,15 +1,20 @@
 package com.ryouonritsu.ic.service.impl
 
 import com.ryouonritsu.ic.common.utils.RedisUtils
+import com.ryouonritsu.ic.common.utils.RequestContext
+import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.MRO
 import com.ryouonritsu.ic.repository.MRORepository
+import com.ryouonritsu.ic.repository.UserRepository
 import com.ryouonritsu.ic.service.MROService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import javax.persistence.criteria.Predicate
 
 /**
@@ -20,6 +25,7 @@ import javax.persistence.criteria.Predicate
 class MROServiceImpl(
     private val redisUtils: RedisUtils,
     private val mroRepository: MRORepository,
+    private val userRepository: UserRepository,
 ) : MROService {
 
     companion object {
@@ -59,5 +65,27 @@ class MROServiceImpl(
         val total = result.totalElements
         val users = result.content.map { it.toDTO() }
         return Response.success(ListMROResponse(total, users))
+    }
+
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun createMRO(request: CreateMRORequest): Response<Unit> {
+        return runCatching {
+            val user = userRepository.findById(RequestContext.user!!.id).get()
+            mroRepository.save(
+                MRO(
+                    customId = user.id,
+                    problem = request.problem!!,
+                    expectTime = request.expectTime!!,
+                    roomId = request.roomId!!,
+                )
+            )
+            Response.success<Unit>("创建成功")
+        }.onFailure {
+            if (it is NoSuchElementException) {
+                redisUtils - "${RequestContext.user!!.id}"
+                return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+            }
+            log.error(it.stackTraceToString())
+        }.getOrDefault(Response.failure("创建失败, 发生意外错误"))
     }
 }

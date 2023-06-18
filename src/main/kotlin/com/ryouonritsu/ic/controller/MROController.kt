@@ -1,17 +1,17 @@
 package com.ryouonritsu.ic.controller
 
+import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.annotation.ServiceLog
+import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.utils.RedisUtils
+import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.service.MROService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotNull
@@ -34,6 +34,7 @@ class MROController(
 
     @ServiceLog(description = "查询维修工单列表")
     @GetMapping("/list")
+    @AuthCheck(auth = [AuthEnum.TOKEN])
     @Tag(name = "维修工单接口")
     @Operation(summary = "查询维修工单列表")
     fun list(
@@ -42,19 +43,15 @@ class MROController(
             required = false
         ) @Parameter(description = "维修工单id，精确") id: String?,
         @RequestParam(
-            "custom_id",
             required = false
         ) @Parameter(description = "客户id，精确") customId: String?,
         @RequestParam(
-            "worker_id",
             required = false
         ) @Parameter(description = "维修人员id，精确") workerId: String?,
         @RequestParam(
-            "room_id",
             required = false
         ) @Parameter(description = "房间id，精确") roomId: String?,
         @RequestParam(
-            "is_solved",
             required = false
         ) @Parameter(description = "是否解决，精确") isSolved: Boolean?,
         @RequestParam("page") @Parameter(
@@ -74,4 +71,15 @@ class MROController(
         page!!,
         limit!!
     )
+
+    @ServiceLog(description = "用户创建维修工单")
+    @PostMapping("/createMRO")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.CLIENT])
+    @Tag(name = "维修工单接口")
+    @Operation(
+        summary = "用户创建维修工单",
+        description = "由客户创建维修工单，填写问题描述、期望时间段（多个时间段、分上下午）、报修房间号"
+    )
+    fun modifyUserInfoAdvanced(@RequestBody @Valid request: CreateMRORequest) =
+        mroService.createMRO(request)
 }

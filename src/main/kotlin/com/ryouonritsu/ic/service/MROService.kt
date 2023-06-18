@@ -1,6 +1,6 @@
 package com.ryouonritsu.ic.service
 
-import com.ryouonritsu.ic.domain.dto.MRODTO
+import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 
@@ -10,12 +10,8 @@ import com.ryouonritsu.ic.domain.protocol.response.Response
  */
 interface MROService {
     fun list(
-        id: String?,
-        customId: String?,
-        workerId: String?,
-        roomId: String?,
-        isSolved: Boolean?,
-        page: Int,
-        limit: Int
+        id: String?, customId: String?, workerId: String?, roomId: String?, isSolved: Boolean?, page: Int, limit: Int
     ): Response<ListMROResponse>
+
+    fun createMRO(request: CreateMRORequest): Response<Unit>
 }
