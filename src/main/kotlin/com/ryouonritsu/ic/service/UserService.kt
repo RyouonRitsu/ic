@@ -25,22 +25,33 @@ interface UserService {
     fun modifyEmail(request: ModifyEmailRequest): Response<Unit>
     fun queryHeaders(): Response<List<ColumnDSL>>
     fun list(
-        realName: String?,
-        gender: String?,
-        birthday: String?,
+        id: Long?,
+        username: String?,
+        legalName: String?,
+        gender: Int?,
+        contactName: String?,
+        phone: String?,
         location: String?,
-        studentId: String?,
-        classId: String?,
-        admissionYear: String?,
-        graduationYear: String?,
-        college: String?,
-        industry: String?,
-        company: String?,
+        companyName: String?,
+        position: String?,
+        userType: Int?,
         page: Int,
         limit: Int
     ): Response<ListUserResponse>
 
-    fun download(): XSSFWorkbook
+    fun download(
+        id: Long?,
+        username: String?,
+        legalName: String?,
+        gender: Int?,
+        contactName: String?,
+        phone: String?,
+        location: String?,
+        companyName: String?,
+        position: String?,
+        userType: Int?
+    ): XSSFWorkbook
+
     fun downloadTemplate(): XSSFWorkbook
     fun upload(file: MultipartFile): Response<Unit>
     fun findByKeyword(keyword: String): Response<List<UserDTO>>

@@ -10,6 +10,7 @@ import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.protocol.request.*
 import com.ryouonritsu.ic.domain.protocol.response.Response
+import com.ryouonritsu.ic.entity.User
 import com.ryouonritsu.ic.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -49,6 +50,16 @@ class UserController(
     )
     fun sendRegistrationVerificationCode(@RequestBody @Valid request: SendRegistrationVerificationCodeRequest) =
         userService.sendRegistrationVerificationCode(request.email, request.modify)
+
+    @ServiceLog(description = "生成注册邀请码")
+    @PostMapping("/generateInvitationCode")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
+    @Tag(name = "用户接口")
+    @Operation(
+        summary = "生成注册邀请码",
+        description = "管理员生成注册邀请码"
+    )
+    fun generateInvitationCode() = userService.generateInvitationCode()
 
     @ServiceLog(description = "用户注册")
     @PostMapping("/register")
@@ -190,49 +201,45 @@ class UserController(
     )
     fun list(
         @RequestParam(
-            "realName",
+            "id",
             required = false
-        ) @Parameter(description = "真实姓名，模糊") realName: String?,
+        ) @Parameter(description = "id，精确") id: Long?,
+        @RequestParam(
+            "username",
+            required = false
+        ) @Parameter(description = "用户名，模糊") username: String?,
+        @RequestParam(
+            "legalName",
+            required = false
+        ) @Parameter(description = "法人名，模糊") legalName: String?,
         @RequestParam(
             "gender",
             required = false
-        ) @Parameter(description = "性别，精确") gender: String?,
+        ) @Parameter(description = "性别，精确") gender: User.Gender?,
         @RequestParam(
-            "birthday",
+            "contactName",
             required = false
-        ) @Parameter(description = "生日，yyyy-MM-dd，精确") birthday: String?,
+        ) @Parameter(description = "联系人名，模糊") contactName: String?,
+        @RequestParam(
+            "phone",
+            required = false
+        ) @Parameter(description = "手机号，精确") phone: String?,
         @RequestParam(
             "location",
             required = false
-        ) @Parameter(description = "位置，模糊") location: String?,
+        ) @Parameter(description = "位置，精确") location: String?,
         @RequestParam(
-            "studentId",
+            "companyName",
             required = false
-        ) @Parameter(description = "学号，精确") studentId: String?,
+        ) @Parameter(description = "公司名，模糊") companyName: String?,
         @RequestParam(
-            "classId",
+            "position",
             required = false
-        ) @Parameter(description = "班级，精确") classId: String?,
+        ) @Parameter(description = "职位，模糊") position: String?,
         @RequestParam(
-            "admissionYear",
+            "userType",
             required = false
-        ) @Parameter(description = "入学时间，yyyy，精确") admissionYear: String?,
-        @RequestParam(
-            "graduationYear",
-            required = false
-        ) @Parameter(description = "毕业时间，yyyy，精确") graduationYear: String?,
-        @RequestParam(
-            "college",
-            required = false
-        ) @Parameter(description = "学院，精确") college: String?,
-        @RequestParam(
-            "industry",
-            required = false
-        ) @Parameter(description = "行业，精确") industry: String?,
-        @RequestParam(
-            "company",
-            required = false
-        ) @Parameter(description = "公司，精确") company: String?,
+        ) @Parameter(description = "用户类型，精确") userType: User.UserType?,
         @RequestParam("page") @Parameter(
             description = "页码, 从1开始",
             required = true
@@ -242,19 +249,9 @@ class UserController(
             required = true
         ) @Valid @NotNull @Min(1) limit: Int?
     ) = userService.list(
-        realName,
-        gender,
-        birthday,
-        location,
-        studentId,
-        classId,
-        admissionYear,
-        graduationYear,
-        college,
-        industry,
-        company,
-        page!!,
-        limit!!
+        id, username, legalName, gender?.code,
+        contactName, phone, location, companyName,
+        position, userType?.code, page!!, limit!!
     )
 
     @ServiceLog(description = "用户列表下载", printResponse = false)
@@ -265,9 +262,53 @@ class UserController(
         summary = "用户列表下载",
         description = "用户列表下载"
     )
-    fun download(): ResponseEntity<ByteArray> {
+    fun download(
+        @RequestParam(
+            "id",
+            required = false
+        ) @Parameter(description = "id，精确") id: Long?,
+        @RequestParam(
+            "username",
+            required = false
+        ) @Parameter(description = "用户名，模糊") username: String?,
+        @RequestParam(
+            "legalName",
+            required = false
+        ) @Parameter(description = "法人名，模糊") legalName: String?,
+        @RequestParam(
+            "gender",
+            required = false
+        ) @Parameter(description = "性别，精确") gender: User.Gender?,
+        @RequestParam(
+            "contactName",
+            required = false
+        ) @Parameter(description = "联系人名，模糊") contactName: String?,
+        @RequestParam(
+            "phone",
+            required = false
+        ) @Parameter(description = "手机号，精确") phone: String?,
+        @RequestParam(
+            "location",
+            required = false
+        ) @Parameter(description = "位置，精确") location: String?,
+        @RequestParam(
+            "companyName",
+            required = false
+        ) @Parameter(description = "公司名，模糊") companyName: String?,
+        @RequestParam(
+            "position",
+            required = false
+        ) @Parameter(description = "职位，模糊") position: String?,
+        @RequestParam(
+            "userType",
+            required = false
+        ) @Parameter(description = "用户类型，精确") userType: User.UserType?
+    ): ResponseEntity<ByteArray> {
         try {
-            userService.download().use { workbook ->
+            userService.download(
+                id, username, legalName, gender?.code, contactName,
+                phone, location, companyName, position, userType?.code
+            ).use { workbook ->
                 ByteArrayOutputStream().use { os ->
                     workbook.write(os)
                     return DownloadUtils.downloadFile(

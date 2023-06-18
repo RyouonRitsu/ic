@@ -20,7 +20,10 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(value = [ServiceException::class])
     fun serviceExceptionHandler(serviceException: ServiceException): Response<Unit> {
-        log.error("ServiceException occurred: code = ${serviceException.code}, message = ${serviceException.message}", serviceException)
+        log.error(
+            "ServiceException occurred: code = ${serviceException.code}, message = ${serviceException.message}",
+            serviceException
+        )
         return if (serviceException.code != null) Response.failure(
             ExceptionEnum.getByCode(
                 serviceException.code!!

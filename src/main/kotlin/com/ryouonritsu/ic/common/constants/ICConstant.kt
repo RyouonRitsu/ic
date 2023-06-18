@@ -35,6 +35,11 @@ object ICConstant {
     const val INT_184 = 184
 
     /**
+     * Int型20000
+     */
+    const val INT_20000 = 20000
+
+    /**
      * Int型40000
      */
     const val INT_40000 = 40000

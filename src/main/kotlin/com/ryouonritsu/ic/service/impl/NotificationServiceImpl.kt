@@ -132,7 +132,9 @@ class NotificationServiceImpl(
     override fun unsubscribe(request: UnsubscribeRequest): Response<Unit> {
         val subscriber = subscriberRepository.findByTagAndEmail(request.tag!!, request.email!!)
             ?: return Response.failure("该邮箱尚未订阅该事件通知")
-        val (success, response) = userManager.verifyCodeCheck(request.email, request.verificationCode)
+        val (success, response) = userManager.verifyCodeCheck(
+            request.email, request.verificationCode
+        )
         if (!success) return response!!
         subscriber.status = false
         subscriberRepository.save(subscriber)

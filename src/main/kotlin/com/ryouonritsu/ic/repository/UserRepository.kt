@@ -26,7 +26,12 @@ interface UserRepository : JpaRepositoryImplementation<User, Long> {
             SELECT *
             FROM user
             WHERE status = 1
-                AND (id = ?1 OR username LIKE CONCAT('%', ?1, '%') OR legal_name LIKE CONCAT('%', ?1, '%'))
+                AND (id = ?1 OR email = ?1
+                   OR username LIKE CONCAT('%', ?1, '%')
+                   OR legal_name LIKE CONCAT('%', ?1, '%')
+                   OR contact_name LIKE CONCAT('%', ?1, '%')
+                   OR company_name LIKE CONCAT('%', ?1, '%')
+                   OR position LIKE CONCAT('%', ?1, '%'))
             LIMIT 10
         """,
         nativeQuery = true

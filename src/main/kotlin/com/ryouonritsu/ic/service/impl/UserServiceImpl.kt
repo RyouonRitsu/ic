@@ -1,6 +1,8 @@
 package com.ryouonritsu.ic.service.impl
 
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_1
+import com.ryouonritsu.ic.common.constants.ICConstant.INT_20000
 import com.ryouonritsu.ic.common.constants.TemplateType
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
@@ -248,7 +250,9 @@ class UserServiceImpl(
             0 -> {
                 val (re, msg) = emailCheck(request.email)
                 if (!re && msg != null) return msg
-                val (result, message) = userManager.verifyCodeCheck(request.email!!, request.verifyCode)
+                val (result, message) = userManager.verifyCodeCheck(
+                    request.email!!, request.verifyCode
+                )
                 if (!result && message != null) return message
                 if (request.password1 != request.password2) return Response.failure("两次密码不一致")
                 return runCatching {
@@ -418,59 +422,38 @@ class UserServiceImpl(
     }
 
     override fun list(
-        realName: String?,
-        gender: String?,
-        birthday: String?,
+        id: Long?,
+        username: String?,
+        legalName: String?,
+        gender: Int?,
+        contactName: String?,
+        phone: String?,
         location: String?,
-        studentId: String?,
-        classId: String?,
-        admissionYear: String?,
-        graduationYear: String?,
-        college: String?,
-        industry: String?,
-        company: String?,
+        companyName: String?,
+        position: String?,
+        userType: Int?,
         page: Int,
         limit: Int
     ): Response<ListUserResponse> {
         val specification = Specification<User> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
-            if (!realName.isNullOrBlank()) {
-                predicates += cb.like(root["realName"], "%$realName%")
-            }
-            if (!gender.isNullOrBlank()) {
-                val g = User.Gender.getByDesc(gender).code
-                predicates += cb.equal(root.get<Int>("gender"), g)
-            }
-            if (!birthday.isNullOrBlank()) {
-                val b = LocalDate.parse(birthday)
-                predicates += cb.equal(root.get<LocalDate>("birthday"), b)
-            }
-            if (!location.isNullOrBlank()) {
-                predicates += cb.like(root["location"], "%$location%")
-            }
-            if (!studentId.isNullOrBlank()) {
-                predicates += cb.like(root["userInfo"], "%\"studentId\":\"$studentId\"%")
-            }
-            if (!classId.isNullOrBlank()) {
-                predicates += cb.like(root["userInfo"], "%\"classId\":\"$classId\"%")
-            }
-            if (!admissionYear.isNullOrBlank()) {
-                predicates += cb.like(root["userInfo"], "%\"admissionYear\":\"$admissionYear\"%")
-            }
-            if (!graduationYear.isNullOrBlank()) {
-                predicates += cb.like(root["userInfo"], "%\"graduationYear\":\"$graduationYear\"%")
-            }
-            if (!college.isNullOrBlank()) {
-                predicates += cb.like(root["userInfo"], "%\"college\":\"$college\"%")
-            }
-            if (!industry.isNullOrBlank()) {
-                predicates += cb.like(root["userInfo"], "%\"industry\":\"$industry\"%")
-            }
-            if (!company.isNullOrBlank()) {
-                predicates += cb.like(root["userInfo"], "%\"company\":\"$company\"%")
-            }
-            predicates += cb.equal(root.get<Boolean>("isDeleted"), false)
-            query.where(*predicates.toTypedArray()).restriction
+            if (id != null) predicates += cb.equal(root.get<Long>("id"), id)
+            if (!username.isNullOrBlank()) predicates += cb.like(root["username"], "%$username%")
+            if (!legalName.isNullOrBlank()) predicates += cb.like(root["legalName"], "%$legalName%")
+            if (gender != null) predicates += cb.equal(root.get<Int>("gender"), gender)
+            if (!contactName.isNullOrBlank())
+                predicates += cb.like(root["contactName"], "%$contactName%")
+            if (!phone.isNullOrBlank()) predicates += cb.equal(root.get<String>("phone"), phone)
+            if (!location.isNullOrBlank())
+                predicates += cb.equal(root.get<String>("location"), location)
+            if (!companyName.isNullOrBlank())
+                predicates += cb.like(root["companyName"], "%$companyName%")
+            if (!position.isNullOrBlank()) predicates += cb.like(root["position"], "%$position%")
+            if (userType != null) predicates += cb.equal(root.get<Int>("userType"), userType)
+            predicates += cb.equal(root.get<Boolean>("status"), true)
+            query.where(*predicates.toTypedArray())
+                .orderBy(cb.asc(root.get<Long>("id")))
+                .restriction
         }
         val result = userRepository.findAll(specification, PageRequest.of(page - 1, limit))
         val total = result.totalElements
@@ -478,12 +461,30 @@ class UserServiceImpl(
         return Response.success(ListUserResponse(total, users))
     }
 
-    override fun download(): XSSFWorkbook {
+    override fun download(
+        id: Long?,
+        username: String?,
+        legalName: String?,
+        gender: Int?,
+        contactName: String?,
+        phone: String?,
+        location: String?,
+        companyName: String?,
+        position: String?,
+        userType: Int?
+    ): XSSFWorkbook {
         val headers = queryHeaders().data ?: run {
             log.error("[UserServiceImpl.download] 没有用户列表模板")
             throw ServiceException(ExceptionEnum.TEMPLATE_NOT_EXIST)
         }
-        val data = userRepository.findAll().map { it.toDTO() }
+        val data = list(
+            id, username, legalName, gender,
+            contactName, phone, location, companyName,
+            position, userType, INT_1, INT_20000
+        ).data?.list ?: run {
+            log.error("[UserServiceImpl.download] 响应数据为空")
+            listOf()
+        }
         return XSSFWorkbook().process(headers, data)
     }
 
