@@ -18,9 +18,9 @@ class Room(
     @Column(columnDefinition = "BIGINT COMMENT '房间ID'", nullable = false)
     var id: Long = 0,
     @Column(columnDefinition = "BIGINT COMMENT '用户ID'", nullable = true)
-    var userid: Long =0,
+    var userid: Long,
     @Column(columnDefinition = "BIGINT COMMENT '租赁状态'", nullable = false)
-    var status: Long=0,
+    var status: Long,
     @Column(columnDefinition = "DATE DEFAULT '1900-01-01' COMMENT '签约时间'", nullable = true)
     var commence: LocalDate = LocalDate.of(1900, 1, 1),
     @Column(columnDefinition = "DATE DEFAULT '1900-01-01' COMMENT '租赁结束时间'", nullable = true)

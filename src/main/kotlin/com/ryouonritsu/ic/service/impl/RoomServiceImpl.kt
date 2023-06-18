@@ -1,8 +1,13 @@
 package com.ryouonritsu.ic.service.impl
 
+import com.ryouonritsu.ic.common.constants.TemplateType
+import com.ryouonritsu.ic.common.enums.ExceptionEnum
+import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RedisUtils.Companion.log
 import com.ryouonritsu.ic.common.utils.RequestContext
+import com.ryouonritsu.ic.component.ColumnDSL
+import com.ryouonritsu.ic.component.process
 import com.ryouonritsu.ic.domain.dto.RoomDTO
 import com.ryouonritsu.ic.repository.RoomRepository
 import com.ryouonritsu.ic.service.RoomService
@@ -10,6 +15,8 @@ import org.springframework.stereotype.Service
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.RoomFile
 import com.ryouonritsu.ic.repository.RoomFileRepository
+import com.ryouonritsu.ic.service.TableTemplateService
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
@@ -24,6 +31,7 @@ class RoomServiceImpl(
     private val redisUtils: RedisUtils,
     private val roomRepository: RoomRepository,
     private val roomFileRepository: RoomFileRepository,
+    private val tableTemplateService: TableTemplateService,
     @Value("\${static.file.prefix}")
     private val staticFilePrefix: String,
 ) : RoomService {
@@ -68,5 +76,29 @@ class RoomServiceImpl(
             )
         }.onFailure { log.error(it.stackTraceToString()) }
             .getOrDefault(Response.failure("上传失败，发生意外错误"))
+    }
+
+    override fun queryHeaders(): Response<List<ColumnDSL>> {
+        return Response.success(tableTemplateService.queryHeaders(TemplateType.ROOM_LIST_TEMPLATE))
+    }
+    override fun download(): XSSFWorkbook {
+        val headers = queryHeaders().data ?: run{
+            log.error("[RoomServiceImpl.download] 没有用户列表模板")
+            throw ServiceException(ExceptionEnum.TEMPLATE_NOT_EXIST)
+        }
+        val data = roomRepository.findAll().map { it.toDTO() }
+        return XSSFWorkbook().process(headers, data)
+    }
+
+    override fun downloadTemplate(): XSSFWorkbook {
+        TODO("Not yet implemented")
+    }
+
+    override fun findByKeyword(keyword: String): Response<List<RoomDTO>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun upload(file: MultipartFile): Response<Unit> {
+        TODO("Not yet implemented")
     }
 }
