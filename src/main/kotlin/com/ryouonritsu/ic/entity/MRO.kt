@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.entity
 
+import com.alibaba.fastjson2.JSONObject
 import com.ryouonritsu.ic.domain.dto.MRODTO
 import java.time.LocalDateTime
 import javax.persistence.*
@@ -34,14 +35,14 @@ class MRO(
     var roomId: Long,
     @Column(columnDefinition = "LONGTEXT COMMENT '问题描述'", nullable = false)
     var problem: String = "",
-    @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '期望时间段'", nullable = false)
-    var expectTime: String = "",
-    @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '实际时间段'", nullable = false)
-    var actualTime: String = "",
+    @Column(name = "expect_time", columnDefinition = "TEXT COMMENT '期望时间段'", nullable = false)
+    var expectTime: String = JSONObject().toJSONString(),
+    @Column(name = "actual_time", columnDefinition = "TEXT COMMENT '实际时间段'", nullable = false)
+    var actualTime: String = JSONObject().toJSONString(),
     @Column(columnDefinition = "LONGTEXT COMMENT '问题解决方法'", nullable = false)
     var resolvent: String = "",
-    @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '维修时间'", nullable = false)
-    var maintenanceTime: String = "",
+    @Column(name = "maintenance_time",columnDefinition = "TEXT COMMENT '具体维修时间'", nullable = false)
+    var maintenanceTime: String = JSONObject().toJSONString(),
     @Column(
         name = "is_solved",
         columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '是否解决'",
