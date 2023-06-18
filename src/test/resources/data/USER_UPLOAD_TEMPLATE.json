@@ -11,7 +11,8 @@
           "$.email"
         ],
         "extra": {
-          "unique": true
+          "unique": true,
+          "required": true
         }
       },
       {
@@ -22,7 +23,8 @@
           "$.username"
         ],
         "extra": {
-          "unique": true
+          "unique": true,
+          "required": true
         }
       },
       {
@@ -31,7 +33,10 @@
         "dataType": "string",
         "dataPaths": [
           "$.legalName"
-        ]
+        ],
+        "extra": {
+          "required": true
+        }
       },
       {
         "id": 4,
@@ -39,7 +44,10 @@
         "dataType": "string",
         "dataPaths": [
           "$.contactName"
-        ]
+        ],
+        "extra": {
+          "required": true
+        }
       },
       {
         "id": 5,
@@ -47,7 +55,10 @@
         "dataType": "string",
         "dataPaths": [
           "$.phone"
-        ]
+        ],
+        "extra": {
+          "required": true
+        }
       },
       {
         "id": 6,
@@ -71,7 +82,10 @@
         "dataType": "string",
         "dataPaths": [
           "$.userType"
-        ]
+        ],
+        "extra": {
+          "required": true
+        }
       }
     ]
   }

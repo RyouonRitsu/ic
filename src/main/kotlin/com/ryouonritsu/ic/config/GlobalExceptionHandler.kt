@@ -24,18 +24,13 @@ class GlobalExceptionHandler {
             "ServiceException occurred: code = ${serviceException.code}, message = ${serviceException.message}",
             serviceException
         )
-        return if (serviceException.code != null) Response.failure(
-            ExceptionEnum.getByCode(
-                serviceException.code!!
-            )
-        )
-        else Response.failure("${serviceException.message}")
+        return Response.failure(serviceException)
     }
 
     @ExceptionHandler(value = [NullPointerException::class])
     fun exceptionHandler(exception: NullPointerException): Response<Unit> {
         log.error("NullPointerException occurred: ${exception.cause}", exception)
-        return Response.failure(exception.toString())
+        return Response.failure(exception.message.toString())
     }
 
     @ExceptionHandler(value = [MethodArgumentNotValidException::class])
@@ -48,6 +43,6 @@ class GlobalExceptionHandler {
     @ExceptionHandler(value = [Exception::class])
     fun exceptionHandler(exception: Exception): Response<Unit> {
         log.error("UnknownError occurred: ${exception.cause}", exception)
-        return Response.failure(ExceptionEnum.INTERNAL_SERVER_ERROR, exception.toString())
+        return Response.failure(ExceptionEnum.INTERNAL_SERVER_ERROR, exception.message.toString())
     }
 }

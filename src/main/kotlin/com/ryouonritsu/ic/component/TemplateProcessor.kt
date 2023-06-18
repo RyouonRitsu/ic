@@ -9,6 +9,7 @@ import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_184
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_256
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_65280
+import com.ryouonritsu.ic.common.constants.ICConstant.REQUIRED
 import com.ryouonritsu.ic.common.constants.ICConstant.UNIQUE
 import com.ryouonritsu.ic.common.enums.DataTypeEnum
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
@@ -109,7 +110,16 @@ fun Row.parse(evaluator: FormulaEvaluator, columnDefinitions: List<ColumnDSL>): 
             this.getCell(id).apply { cellStyle = null },
             evaluator
         ).split(DEFAULT_DELIMITER)
-        dsl.dataPaths.forEachIndexed { index, path -> JSONPath.set(result, path, value[index]) }
+        dsl.dataPaths.forEachIndexed { index, path ->
+            if (index >= value.size) throw ServiceException(ExceptionEnum.DATA_ERROR)
+            if (dsl.extra?.getBoolean(REQUIRED) == true && value[index].isBlank())
+                throw ServiceException(
+                    ExceptionEnum.MISSING_DATA,
+                    "${ExceptionEnum.MISSING_DATA.message}, \"${dsl.columnName}\" is required"
+                )
+
+            JSONPath.set(result, path, value[index])
+        }
     }
     return result
 }
@@ -151,7 +161,10 @@ fun <T> MultipartFile.read(
                         .map { path -> JSONPath.eval(d, path) }
                         .joinToString(DEFAULT_DELIMITER)
                     if (value !in fields) fields += value
-                    else throw ServiceException(ExceptionEnum.DATA_ERROR)
+                    else throw ServiceException(
+                        ExceptionEnum.DATA_DUPLICATION,
+                        "${ExceptionEnum.DATA_DUPLICATION.message}, please check the column \"${it.columnName}\""
+                    )
                 }
             }
         }

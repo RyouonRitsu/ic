@@ -1,6 +1,7 @@
 package com.ryouonritsu.ic.domain.protocol.response
 
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
+import com.ryouonritsu.ic.common.exception.ServiceException
 import io.swagger.v3.oas.annotations.media.Schema
 
 /**
@@ -30,6 +31,9 @@ class Response<T>(
 
         fun <T> failure(message: String): Response<T> =
             Response(ExceptionEnum.UNEXPECTED_ERROR.code, message, null)
+
+        fun <T> failure(exception: ServiceException): Response<T> =
+            Response(exception.code.toString(), exception.message.toString(), null)
 
         fun <T> failure(exceptionEnum: ExceptionEnum): Response<T> =
             Response(exceptionEnum.code, exceptionEnum.message, null)

@@ -100,6 +100,11 @@ object ICConstant {
     const val UNIQUE = "unique"
 
     /**
+     * 必填
+     */
+    const val REQUIRED = "required"
+
+    /**
      * 默认分隔符
      */
     const val DEFAULT_DELIMITER = ", "

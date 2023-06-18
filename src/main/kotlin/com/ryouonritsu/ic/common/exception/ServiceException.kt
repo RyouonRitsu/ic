@@ -10,8 +10,13 @@ class ServiceException : RuntimeException {
     override var message: String? = null
 
     constructor() : super()
-    constructor(exceptionEnum: ExceptionEnum) : super(exceptionEnum.code) {
+    constructor(exceptionEnum: ExceptionEnum) : this() {
         this.code = exceptionEnum.code
         this.message = exceptionEnum.message
+    }
+
+    constructor(exceptionEnum: ExceptionEnum, message: String) : this() {
+        this.code = exceptionEnum.code
+        this.message = message
     }
 }

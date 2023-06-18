@@ -30,7 +30,9 @@ enum class ExceptionEnum(
     FIELD_NOT_FOUND("10008", "field not found"),
     DATA_TYPE_IS_INVALID("10009", "data type is invalid"),
     INSUFFICIENT_BALANCE("10010", "insufficient balance"),
-    INSUFFICIENT_AMOUNT("10011", "insufficient amount");
+    INSUFFICIENT_AMOUNT("10011", "insufficient amount"),
+    DATA_DUPLICATION("10012", "data duplication"),
+    MISSING_DATA("10013", "missing data");
 
     companion object {
         fun getByCode(code: String) = values().first { it.code == code }
