@@ -1,7 +1,9 @@
 package com.ryouonritsu.ic.service.impl
 
+import com.ryouonritsu.ic.common.utils.MD5Util
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
+import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
@@ -87,5 +89,24 @@ class MROServiceImpl(
             }
             log.error(it.stackTraceToString())
         }.getOrDefault(Response.failure("创建失败, 发生意外错误"))
+    }
+
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun adminModifyMRO(request: AdminModifyMRORequest): Response<Unit> {
+        return runCatching {
+            userRepository.findById(RequestContext.user!!.id).get()
+            val mro = mroRepository.findById(request.id!!)
+                ?: return Response.failure("该邮箱未被注册, 发生意外错误, 请检查数据库")
+            mro.workerId = request.workerId!!.toLong()
+            mro.actualTime = request.actualTime!!
+            mroRepository.save(mro)
+            Response.success<Unit>("修改成功")
+        }.onFailure {
+            if (it is NoSuchElementException) {
+                redisUtils - "${RequestContext.user!!.id}"
+                return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+            }
+            log.error(it.stackTraceToString())
+        }.getOrDefault(Response.failure("修改失败, 发生意外错误"))
     }
 }

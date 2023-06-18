@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.service
 
+import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
@@ -14,4 +15,6 @@ interface MROService {
     ): Response<ListMROResponse>
 
     fun createMRO(request: CreateMRORequest): Response<Unit>
+
+    fun adminModifyMRO(request: AdminModifyMRORequest): Response<Unit>
 }

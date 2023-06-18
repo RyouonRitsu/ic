@@ -4,6 +4,7 @@ import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.annotation.ServiceLog
 import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.utils.RedisUtils
+import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.service.MROService
 import io.swagger.v3.oas.annotations.Operation
@@ -80,6 +81,17 @@ class MROController(
         summary = "用户创建维修工单",
         description = "由客户创建维修工单，填写问题描述、期望时间段（多个时间段、分上下午）、报修房间号"
     )
-    fun modifyUserInfoAdvanced(@RequestBody @Valid request: CreateMRORequest) =
+    fun createMRO(@RequestBody @Valid request: CreateMRORequest) =
         mroService.createMRO(request)
+
+    @ServiceLog(description = "管理员修改维修工单")
+    @PostMapping("/adminModifyMRO")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
+    @Tag(name = "维修工单接口")
+    @Operation(
+        summary = "管理员修改维修工单",
+        description = "管理员查看问题描述后根据维修类型和期望时间段筛选可用维修人员，填入维修人员id和实际时间段"
+    )
+    fun adminModifyMRO(@RequestBody @Valid request: AdminModifyMRORequest) =
+        mroService.adminModifyMRO(request)
 }
