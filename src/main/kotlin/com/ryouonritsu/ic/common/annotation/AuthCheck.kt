@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.common.annotation
 
+import com.ryouonritsu.ic.common.constants.ICConstant.MAINTENANCE_STAFF_TYPE_CODES
 import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
@@ -51,11 +52,7 @@ class AuthCheckAspect(
         }
         if (AuthEnum.ADMIN in authCheck.auth && user.userType != User.UserType.ADMIN()
             || AuthEnum.CLIENT in authCheck.auth && user.userType != User.UserType.CLIENT()
-            || AuthEnum.MAINTENANCE_STAFF in authCheck.auth && user.userType !in setOf(
-                User.UserType.WATER_MAINTENANCE_STAFF(),
-                User.UserType.ELECTRICITY_MAINTENANCE_STAFF(),
-                User.UserType.MACHINE_MAINTENANCE_STAFF()
-            )
+            || AuthEnum.MAINTENANCE_STAFF in authCheck.auth && user.userType !in MAINTENANCE_STAFF_TYPE_CODES
         ) throw ServiceException(ExceptionEnum.PERMISSION_DENIED)
     }
 }

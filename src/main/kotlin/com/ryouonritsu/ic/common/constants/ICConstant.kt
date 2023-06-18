@@ -1,5 +1,7 @@
 package com.ryouonritsu.ic.common.constants
 
+import com.ryouonritsu.ic.entity.User
+
 /**
  * @author ryouonritsu
  */
@@ -108,4 +110,13 @@ object ICConstant {
      * 默认分隔符
      */
     const val DEFAULT_DELIMITER = ", "
+
+    /**
+     * 维修人员类型集合
+     */
+    val MAINTENANCE_STAFF_TYPE_CODES = setOf(
+        User.UserType.WATER_MAINTENANCE_STAFF(),
+        User.UserType.ELECTRICITY_MAINTENANCE_STAFF(),
+        User.UserType.MACHINE_MAINTENANCE_STAFF()
+    )
 }
