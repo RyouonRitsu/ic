@@ -32,6 +32,10 @@ class Room(
 ){
     fun toDTO() = RoomDTO (
         id = "$id",
-        userid, status, commence, terminate, contract, roomInfo
+        userid = "$userid",
+        status = "$status",
+        commence, terminate,
+        contract = "$contract",
+        roomInfo
     )
 }
