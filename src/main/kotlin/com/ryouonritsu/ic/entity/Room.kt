@@ -26,11 +26,12 @@ class Room(
     @Column(columnDefinition = "DATE DEFAULT '1900-01-01' COMMENT '租赁结束时间'", nullable = true)
     var terminate: LocalDate= LocalDate.of(1900, 1,1),
     @Column(columnDefinition = "BIGINT COMMENT '合同ID'", nullable = true)
-    var contract: LocalDate = LocalDate.of(1900,1, 1),
+    var contract: Long = 0,
     @Column(name = "room_info", columnDefinition = "LONGTEXT COMMENT '用户信息JSON'")
     var roomInfo: String=""
 ){
-    fun toDTO(): RoomDTO {
-        TODO()
-    }
+    fun toDTO() = RoomDTO (
+        id = "$id",
+        userid, status, commence, terminate, contract, roomInfo
+    )
 }
