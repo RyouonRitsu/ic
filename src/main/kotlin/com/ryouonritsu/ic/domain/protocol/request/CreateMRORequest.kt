@@ -18,4 +18,7 @@ data class CreateMRORequest(
     @field:NotNull
     @Schema(description = "报修房间号", required = true)
     var roomId: Long?,
+    @field:NotNull
+    @Schema(description = "维修类型, example = water, electric, machine", required = true)
+    var label: String?,
     )

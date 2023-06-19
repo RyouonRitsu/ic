@@ -65,6 +65,8 @@ class MRO(
         nullable = false
     )
     var modifyTime: LocalDateTime = LocalDateTime.now(),
+    @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '维修类型标签'", nullable = false)
+    var label: String = "",
 ) {
     fun toDTO() = MRODTO(
         id = "$id",
@@ -79,5 +81,8 @@ class MRO(
         resolvent = resolvent,
         maintenanceTime = maintenanceTime,
         isSolved = isSolved,
+        createTime = createTime,
+        modifyTime = modifyTime,
+        label = label,
     )
 }

@@ -90,6 +90,7 @@ class MROServiceImpl(
                     customId = user.id,
                     problem = request.problem!!,
                     expectTime = request.expectTime!!,
+                    label = request.label!!,
                     roomId = request.roomId!!,
                 )
             )
