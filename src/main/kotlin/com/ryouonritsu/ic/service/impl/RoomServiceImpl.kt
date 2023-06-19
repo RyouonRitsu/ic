@@ -7,7 +7,11 @@ import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RedisUtils.Companion.log
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.component.ColumnDSL
+import com.ryouonritsu.ic.component.file.ExcelSheetDefinition
+import com.ryouonritsu.ic.component.file.converter.RoomUploadConverter
+import com.ryouonritsu.ic.component.getTemplate
 import com.ryouonritsu.ic.component.process
+import com.ryouonritsu.ic.component.read
 import com.ryouonritsu.ic.domain.dto.RoomDTO
 import com.ryouonritsu.ic.repository.RoomRepository
 import com.ryouonritsu.ic.service.RoomService
@@ -91,7 +95,15 @@ class RoomServiceImpl(
     }
 
     override fun downloadTemplate(): XSSFWorkbook {
-        TODO("Not yet implemented")
+        val excelSheetDefinitions = getExcelSheetDefinitions()
+        val room = RoomDTO(
+            status = "0"
+        )
+        return XSSFWorkbook().getTemplate(excelSheetDefinitions, listOf(room))
+    }
+
+    private fun getExcelSheetDefinitions(): List<ExcelSheetDefinition> {
+        return tableTemplateService.queryExcelSheetDefinitions(TemplateType.ROOM_UPLOAD_TEMPLATE)
     }
 
     override fun findByKeyword(keyword: String): Response<List<RoomDTO>> {
@@ -99,6 +111,9 @@ class RoomServiceImpl(
     }
 
     override fun upload(file: MultipartFile): Response<Unit> {
-        TODO("Not yet implemented")
+        val excelSheetDefinitions = getExcelSheetDefinitions()
+        val rooms = file.read(excelSheetDefinitions, RoomUploadConverter::convert)
+        roomRepository.saveAll(rooms)
+        return Response.success("上传成功")
     }
 }
