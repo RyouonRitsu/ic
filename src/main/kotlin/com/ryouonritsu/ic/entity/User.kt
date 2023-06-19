@@ -1,9 +1,11 @@
 package com.ryouonritsu.ic.entity
 
 import com.alibaba.fastjson2.JSONArray
-import com.alibaba.fastjson2.JSONObject
 import com.alibaba.fastjson2.parseArray
+import com.alibaba.fastjson2.to
+import com.alibaba.fastjson2.toJSONString
 import com.ryouonritsu.ic.domain.dto.UserDTO
+import com.ryouonritsu.ic.domain.dto.UserInfoDTO
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.*
@@ -67,7 +69,7 @@ class User(
     )
     var userType: Int = 0,
     @Column(name = "user_info", columnDefinition = "LONGTEXT COMMENT '用户信息JSON'")
-    var userInfo: String = JSONObject().toJSONString(),
+    var userInfo: String = UserInfoDTO().toJSONString(),
     @Column(columnDefinition = "TINYINT(3) DEFAULT '1' COMMENT '生效状态'", nullable = false)
     var status: Boolean = true,
     @Column(columnDefinition = "INT DEFAULT '1' COMMENT '版本'", nullable = false)
@@ -128,6 +130,7 @@ class User(
         paymentInfo = paymentInfo.parseArray<String>(),
         position,
         userType = userType.toUserType().desc,
+        userInfo = userInfo.to(),
         registrationTime = createTime
     )
 }

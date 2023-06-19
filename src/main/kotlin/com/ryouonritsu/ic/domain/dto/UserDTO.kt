@@ -39,6 +39,8 @@ data class UserDTO(
     var position: String = "",
     @Schema(description = "用户类型", example = "客户", required = true)
     var userType: String,
+    @Schema(description = "用户附加信息", required = true)
+    val userInfo: UserInfoDTO = UserInfoDTO(),
     @Schema(description = "registration time", required = true)
     var registrationTime: LocalDateTime = LocalDateTime.now(),
 )
