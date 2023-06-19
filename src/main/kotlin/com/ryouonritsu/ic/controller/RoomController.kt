@@ -46,7 +46,7 @@ class RoomController(
     @Tag(name = "房间接口")
     @Operation(
         summary = "上传文件",
-        description = "将用户上传的文件保存在静态文件目录static/file/\${room_id}/\${room_name}下"
+        description = "将用户上传的文件保存在静态文件目录static/file/\${room_id}/\${file_name}下"
     )
     fun uploadFile(@ModelAttribute @Valid request: RoomUploadRequest) =
         roomService.uploadFile(request.file!!)
