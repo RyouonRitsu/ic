@@ -39,3 +39,6 @@ out/
 *.log
 *.log.*
 /static/
+sonar-scanner-4.8.0.2856-macosx/
+.scannerwork/
+sonar.bash
