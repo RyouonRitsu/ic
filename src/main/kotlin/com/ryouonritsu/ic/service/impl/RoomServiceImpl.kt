@@ -106,9 +106,9 @@ class RoomServiceImpl(
         return tableTemplateService.queryExcelSheetDefinitions(TemplateType.ROOM_UPLOAD_TEMPLATE)
     }
 
-    override fun findByKeyword(keyword: String): Response<List<RoomDTO>> {
+    /*override fun findByKeyword(keyword: String): Response<List<RoomDTO>> {
         TODO("Not yet implemented")
-    }
+    }*/
 
     override fun upload(file: MultipartFile): Response<Unit> {
         val excelSheetDefinitions = getExcelSheetDefinitions()
