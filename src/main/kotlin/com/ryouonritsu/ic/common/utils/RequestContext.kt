@@ -2,10 +2,8 @@ package com.ryouonritsu.ic.common.utils
 
 import com.ryouonritsu.ic.common.constants.ICConstant.ROOM
 import com.ryouonritsu.ic.common.constants.ICConstant.USER
-import com.ryouonritsu.ic.entity.User
-import com.ryouonritsu.ic.common.constants.ICConstant.ROOM_ID
-import com.ryouonritsu.ic.common.constants.ICConstant.USER_ID
 import com.ryouonritsu.ic.entity.Room
+import com.ryouonritsu.ic.entity.User
 
 /**
  * @author ryouonritsu

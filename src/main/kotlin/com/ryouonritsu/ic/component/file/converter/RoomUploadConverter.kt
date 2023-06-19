@@ -1,6 +1,5 @@
 package com.ryouonritsu.ic.component.file.converter
 
-import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
 import com.ryouonritsu.ic.common.constants.ICConstant.LONG_0
 import com.ryouonritsu.ic.component.ColumnDSL
 import com.ryouonritsu.ic.component.load
