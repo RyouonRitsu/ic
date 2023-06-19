@@ -17,6 +17,6 @@ interface RoomRepository : JpaRepositoryImplementation<Room, Long> {
     @Query("SELECT r FROM Room r WHERE r.id = ?1") //and isDeleted?
     fun findByRoomId(id: String): Room?
 
-    @Query("SELECT * FROM Room")
+    @Query("SELECT r FROM Room r ORDER BY r.id")
     fun list(pageable: Pageable = PageRequest.of(0, 10)): Page<Room>
 }

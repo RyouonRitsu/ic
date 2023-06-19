@@ -8,12 +8,16 @@ import com.ryouonritsu.ic.service.RoomService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
+import net.bytebuddy.asm.Advice.Local
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import java.io.ByteArrayOutputStream
+import java.time.LocalDate
 import javax.validation.Valid
+import javax.validation.constraints.Min
+import javax.validation.constraints.NotNull
 
 /**
  * @author PaulManstein
@@ -50,6 +54,54 @@ class RoomController(
     )
     fun uploadFile(@ModelAttribute @Valid request: RoomUploadRequest) =
         roomService.uploadFile(request.file!!)
+
+    @ServiceLog(description = "查询房间列表")
+    @GetMapping("/list")
+    @Tag(name = "房间接口")
+    @Operation(
+        summary = "将全部房间列出",
+        description = "按照房间id升序"
+    )
+    fun list(
+        @RequestParam(
+            "id",
+            required = false
+        ) @Parameter(description = "id,精确") id: Long?,
+        @RequestParam(
+            "userid",
+            required = false
+        ) @Parameter(description = "租户id,模糊") userid: Long?,
+        @RequestParam(
+            "status",
+            required = false
+        ) @Parameter(description = "租赁状态,精确") status: Long?,
+        @RequestParam(
+            "commence",
+            required = false
+        ) @Parameter(description = "租赁开始日期,精确") commmence: LocalDate?,
+        @RequestParam(
+            "terminate",
+            required = false
+        ) @Parameter(description = "租赁结束日期,精确") terminate: LocalDate?,
+        @RequestParam(
+            "contract",
+            required = false
+        ) @Parameter(description = "合同Id,精确") contract: Long?,
+        @RequestParam(
+            "roomInfo",
+            required = false
+        ) @Parameter(description = "房间其他信息,模糊") roomInfo: String?,
+        @RequestParam("page") @Parameter(
+            description = "页码, 从1开始",
+            required = true
+        ) @Valid @NotNull @Min(1) page: Int?,
+        @RequestParam("limit") @Parameter(
+            description = "每页数量, 大于0",
+            required = true
+        ) @Valid @NotNull @Min(1) limit: Int?
+    ) = roomService.list(
+        id, userid, status, commmence, terminate, contract, roomInfo, page!!, limit!!
+    )
 
     @ServiceLog(description = "查询房间列表表头")
     @GetMapping("/queryHeaders")
