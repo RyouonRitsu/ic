@@ -6,6 +6,7 @@ import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
+import com.ryouonritsu.ic.domain.protocol.request.WorkerModifyMRORequest
 import com.ryouonritsu.ic.service.MROService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -75,7 +76,7 @@ class MROController(
 
     @ServiceLog(description = "用户创建维修工单")
     @PostMapping("/createMRO")
-    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.CLIENT])
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.CLIENT])
     @Tag(name = "维修工单接口")
     @Operation(
         summary = "用户创建维修工单",
@@ -94,4 +95,15 @@ class MROController(
     )
     fun adminModifyMRO(@RequestBody @Valid request: AdminModifyMRORequest) =
         mroService.adminModifyMRO(request)
+
+    @ServiceLog(description = "维修人员修改维修工单")
+    @PostMapping("/workerModifyMRO")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.MAINTENANCE_STAFF])
+    @Tag(name = "维修工单接口")
+    @Operation(
+        summary = "维修人员修改维修工单",
+        description = "维修人员维修完成后，填写解决办法，解决时间，并自动更新为已解决"
+    )
+    fun workerModifyMRO(@RequestBody @Valid request: WorkerModifyMRORequest) =
+        mroService.workerModifyMRO(request)
 }

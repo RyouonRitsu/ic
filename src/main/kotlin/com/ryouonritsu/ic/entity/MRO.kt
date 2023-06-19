@@ -70,6 +70,7 @@ class MRO(
         id = "$id",
         customId = "$customId",
         userInfo = null,
+        workerInfo = null,
         workerId = "$workerId",
         roomId = "$roomId",
         problem = problem,

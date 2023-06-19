@@ -4,6 +4,7 @@ import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
+import com.ryouonritsu.ic.domain.protocol.request.WorkerModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.MRO
@@ -110,6 +111,26 @@ class MROServiceImpl(
                 ?: return Response.failure("维修工单不存在")
             mro.workerId = request.workerId!!.toLong()
             mro.actualTime = request.actualTime!!
+            mroRepository.save(mro)
+            Response.success<Unit>("修改成功")
+        }.onFailure {
+            if (it is NoSuchElementException) {
+                redisUtils - "${RequestContext.user!!.id}"
+                return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+            }
+            log.error(it.stackTraceToString())
+        }.getOrDefault(Response.failure("修改失败, 发生意外错误"))
+    }
+
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun workerModifyMRO(request: WorkerModifyMRORequest): Response<Unit> {
+        return runCatching {
+            userRepository.findById(RequestContext.user!!.id).get()
+            val mro = mroRepository.findByIdAndStatus(request.id!!.toLong())
+                ?: return Response.failure("维修工单不存在")
+            mro.resolvent = request.resolvent!!
+            mro.maintenanceTime = request.maintenanceTime!!
+            mro.isSolved = true
             mroRepository.save(mro)
             Response.success<Unit>("修改成功")
         }.onFailure {
