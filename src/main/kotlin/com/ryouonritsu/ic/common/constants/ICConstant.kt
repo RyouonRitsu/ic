@@ -97,6 +97,11 @@ object ICConstant {
     const val USER = "user"
 
     /**
+     * 房间
+     */
+    const val ROOM = "Room"
+
+    /**
      * 唯一键
      */
     const val UNIQUE = "unique"

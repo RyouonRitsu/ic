@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.service.impl
 
+import com.ryouonritsu.ic.common.constants.ICConstant.LONG_MINUS_1
 import com.ryouonritsu.ic.common.constants.TemplateType
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
@@ -13,6 +14,7 @@ import com.ryouonritsu.ic.component.getTemplate
 import com.ryouonritsu.ic.component.process
 import com.ryouonritsu.ic.component.read
 import com.ryouonritsu.ic.domain.dto.RoomDTO
+import com.ryouonritsu.ic.domain.protocol.request.ModifyRoomInfoRequest
 import com.ryouonritsu.ic.repository.RoomRepository
 import com.ryouonritsu.ic.service.RoomService
 import org.springframework.stereotype.Service
@@ -22,8 +24,12 @@ import com.ryouonritsu.ic.repository.RoomFileRepository
 import com.ryouonritsu.ic.service.TableTemplateService
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.io.path.Path
 
 /**
@@ -39,9 +45,21 @@ class RoomServiceImpl(
     @Value("\${static.file.prefix}")
     private val staticFilePrefix: String,
 ) : RoomService {
-    override fun showInfo(roomId: Long): Response<List<RoomDTO>> {
-        TODO("Not yet implemented")
+    override fun showInfo(roomId: Long): Response<RoomDTO> {
+        return runCatching {
+            val room = roomRepository.findById(roomId).get()
+            Response.success("获取成功", room.toDTO())
+        }.onFailure {
+            if (it is NoSuchElementException){
+                redisUtils - "$roomId"
+                return Response.failure("数据库中没有此房间，此会话已失效")
+            }
+            log.error(it.stackTraceToString())
+        }.getOrDefault(
+            Response.failure("获取失败，发生意外错误")
+        )
     }
+
     override fun selectRoomById(roomId: Long): Response<List<RoomDTO>> {
         return runCatching {
             val room = roomRepository.findById(roomId).get()
@@ -52,11 +70,58 @@ class RoomServiceImpl(
         }.getOrDefault(Response.failure("获取失败，发生意外错误"))
     }
 
+    override fun deleteFile(url: String): Response<Unit> {
+        return try {
+            val file = roomFileRepository.findByUrl(url)
+                ?: return Response.failure("文件不存在")
+            File(file.filePath).delete()
+            roomFileRepository.delete(file)
+            Response.failure("删除成功")
+        } catch (e:Exception){
+            log.error(e.stackTraceToString())
+            Response.failure("删除失败，发生意外错误")
+        }
+    }
+
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun modifyRoomInfo(request: ModifyRoomInfoRequest): Response<Unit> {
+        return runCatching {
+            val room = roomRepository.findById(request.id ?: RequestContext.room!!.id).get()
+            if(request.userid != LONG_MINUS_1) room.userid = request.userid!!
+            if(request.status!= LONG_MINUS_1) room.status = request.status!!
+            if(!request.commence.isNullOrBlank()){
+                try{
+                    room.commence =
+                        LocalDate.parse(request.commence, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                } catch (e:Exception){
+                    return Response.failure("租赁开始格式错误，应为yyyy-MM-dd")
+                }
+            }
+            if(!request.terminate.isNullOrBlank()){
+                try{
+                    room.terminate =
+                        LocalDate.parse(request.terminate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                } catch (e:Exception){
+                    return Response.failure("租赁开始格式错误，应为yyyy-MM-dd")
+                }
+            }
+            if(request.contract != LONG_MINUS_1) room.contract =  request.contract!!
+            if(!request.roomInfo.isNullOrBlank()) room.roomInfo = request.roomInfo!!
+            roomRepository.save(room)
+            Response.success<Unit>("修改成功")
+        }.onFailure {
+            if(it is NoSuchElementException){
+                redisUtils - "${RequestContext.room!!.id}"
+                return Response.failure("数据库中没有此房间或可能是token验证失败, 此会话已失效")
+            }
+            log.error(it.stackTraceToString())
+        }.getOrDefault(Response.failure("修改失败，发生意外错误"))
+    }
     override fun uploadFile(file: MultipartFile): Response<List<Map<String, String>>> {
         return runCatching {
             if (file.size >= 10 * 1024 *1024) return Response.failure("上传失败，文件大小超过最大限制10MB！")
             val time = System.currentTimeMillis()
-            val roomId  = RequestContext.roomId
+            val roomId  = RequestContext.room?.id
             var fileDir = "static/file/${roomId}"
             val fileName = "${time}_${file.originalFilename}"
             val filePath = "$fileDir/$fileName"
@@ -85,6 +150,7 @@ class RoomServiceImpl(
     override fun queryHeaders(): Response<List<ColumnDSL>> {
         return Response.success(tableTemplateService.queryHeaders(TemplateType.ROOM_LIST_TEMPLATE))
     }
+
     override fun download(): XSSFWorkbook {
         val headers = queryHeaders().data ?: run{
             log.error("[RoomServiceImpl.download] 没有用户列表模板")
