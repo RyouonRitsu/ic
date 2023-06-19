@@ -15,7 +15,7 @@ interface UserService {
     fun sendRegistrationVerificationCode(email: String?, modify: Boolean): Response<Unit>
     fun generateInvitationCode(): Response<String>
     fun register(request: RegisterRequest): Response<Unit>
-    fun login(request: LoginRequest): Response<List<Map<String, String>>>
+    fun login(request: LoginRequest): Response<Map<String, Any>>
     fun showInfo(userId: Long): Response<UserDTO>
     fun sendForgotPasswordEmail(email: String?): Response<Unit>
     fun changePassword(mode: Int, request: ChangePasswordRequest): Response<Unit>

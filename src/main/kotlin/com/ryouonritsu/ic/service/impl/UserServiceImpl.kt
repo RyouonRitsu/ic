@@ -197,7 +197,7 @@ class UserServiceImpl(
         return Response.success("注册成功")
     }
 
-    override fun login(request: LoginRequest): Response<List<Map<String, String>>> {
+    override fun login(request: LoginRequest): Response<Map<String, Any>> {
         val user = userRepository.findByIdentifier(request.identifier!!)
             ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
         if (MD5Util.encode(request.password) != user.password)
@@ -206,11 +206,9 @@ class UserServiceImpl(
         if (request.keepLogin) redisUtils["${user.id}"] = token
         else redisUtils.set("${user.id}", token, 3, TimeUnit.DAYS)
         return Response.success(
-            "登录成功", listOf(
-                mapOf(
-                    "token" to token,
-                    "user_id" to "${user.id}"
-                )
+            "登录成功", mapOf(
+                "token" to token,
+                "user" to user.toDTO()
             )
         )
     }
