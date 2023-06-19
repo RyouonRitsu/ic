@@ -76,7 +76,7 @@ class MROController(
 
     @ServiceLog(description = "用户创建维修工单")
     @PostMapping("/createMRO")
-    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.CLIENT])
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.CLIENT])
     @Tag(name = "维修工单接口")
     @Operation(
         summary = "用户创建维修工单",
@@ -98,7 +98,7 @@ class MROController(
 
     @ServiceLog(description = "维修人员修改维修工单")
     @PostMapping("/workerModifyMRO")
-    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.MAINTENANCE_STAFF])
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.MAINTENANCE_STAFF])
     @Tag(name = "维修工单接口")
     @Operation(
         summary = "维修人员修改维修工单",
