@@ -59,9 +59,9 @@ class RoomController(
             required = false
         ) @Parameter(description = "id,精确") id: Long?,
         @RequestParam(
-            "userid",
+            "userId",
             required = false
-        ) @Parameter(description = "租户id,模糊") userid: Long?,
+        ) @Parameter(description = "租户id,模糊") userId: Long?,
         @RequestParam(
             "status",
             required = false
@@ -91,7 +91,7 @@ class RoomController(
             required = true
         ) @Valid @NotNull @Min(1) limit: Int?
     ) = roomService.list(
-        id, userid, status, commmence, terminate, contract, roomInfo, page!!, limit!!
+        id, userId, status, commmence, terminate, contract, roomInfo, page!!, limit!!
     )
 
     @ServiceLog(description = "查询房间列表表头")

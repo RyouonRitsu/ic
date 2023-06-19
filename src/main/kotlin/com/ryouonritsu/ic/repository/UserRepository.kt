@@ -18,7 +18,7 @@ interface UserRepository : JpaRepositoryImplementation<User, Long> {
     fun findAllByUserTypeAndStatus(userType: Int, status: Boolean = true): List<User>
 
     @Query("SELECT u FROM User u WHERE (u.username = ?1 OR u.email = ?1) AND u.status = true")
-    fun findByIdentifier(username: String): User?
+    fun findByIdentifier(identifier: String): User?
 
     @Query("SELECT u FROM User u WHERE u.email = ?1 AND u.status = true")
     fun findByEmail(email: String): User?

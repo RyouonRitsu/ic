@@ -11,7 +11,7 @@ data class ModifyRoomInfoRequest(
     @Schema(description = "房间Id， 管理员可用")
     var id: Long?,
     @Schema(description = "租户Id，管理员可用")
-    var userid: Long?,
+    var userId: Long?,
     @Schema(description = "租赁状态--是否已租出？， 管理员可用")
     var status: Long?,
     @Schema(description = "租赁开始时间")

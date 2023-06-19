@@ -18,12 +18,10 @@ import com.ryouonritsu.ic.domain.protocol.request.ModifyRoomInfoRequest
 import com.ryouonritsu.ic.domain.protocol.response.ListRoomResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.Room
-import com.ryouonritsu.ic.repository.RoomFileRepository
 import com.ryouonritsu.ic.repository.RoomRepository
 import com.ryouonritsu.ic.service.RoomService
 import com.ryouonritsu.ic.service.TableTemplateService
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
@@ -37,15 +35,11 @@ import javax.persistence.criteria.Predicate
 /**
  * @author PaulManstein
  */
-
 @Service
 class RoomServiceImpl(
     private val redisUtils: RedisUtils,
     private val roomRepository: RoomRepository,
-    private val roomFileRepository: RoomFileRepository,
-    private val tableTemplateService: TableTemplateService,
-    @Value("\${static.file.prefix}")
-    private val staticFilePrefix: String,
+    private val tableTemplateService: TableTemplateService
 ) : RoomService {
     override fun showInfo(roomId: Long): Response<RoomDTO> {
         return runCatching {
@@ -76,7 +70,7 @@ class RoomServiceImpl(
     override fun modifyRoomInfo(request: ModifyRoomInfoRequest): Response<Unit> {
         return runCatching {
             val room = roomRepository.findById(request.id ?: RequestContext.room!!.id).get()
-            if (request.userid != LONG_MINUS_1) room.userid = request.userid!!
+            if (request.userId != LONG_MINUS_1) room.userId = request.userId!!
             if (request.status != LONG_MINUS_1) room.status = request.status!!
             if (!request.commence.isNullOrBlank()) {
                 try {
@@ -115,7 +109,7 @@ class RoomServiceImpl(
 
     override fun list(
         id: Long?,
-        userid: Long?,
+        userId: Long?,
         status: Long?,
         commence: LocalDate?,
         terminate: LocalDate?,
@@ -127,7 +121,7 @@ class RoomServiceImpl(
         val specification = Specification<Room> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
             if (id != null) predicates += cb.equal(root.get<Long>("id"), id)
-            if (userid != null) predicates += cb.equal(root.get<Long>("userid"), id)
+            if (userId != null) predicates += cb.equal(root.get<Long>("userId"), id)
             if (status != null) predicates += cb.equal(root.get<Long>("status"), id)
             if (commence != null) predicates += cb.equal(root.get<LocalDate>("commence"), commence)
             if (terminate != null)

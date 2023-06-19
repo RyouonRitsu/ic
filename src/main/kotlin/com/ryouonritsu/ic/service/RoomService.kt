@@ -19,7 +19,7 @@ interface RoomService {
     fun queryHeaders(): Response<List<ColumnDSL>>
     fun list(
         id: Long?,
-        userid: Long?,
+        userId: Long?,
         status: Long?,
         commence: LocalDate?,
         terminate: LocalDate?,

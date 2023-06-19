@@ -1,11 +1,11 @@
 package com.ryouonritsu.ic.service.impl
 
-
-//import org.hibernate.annotations.common.util.impl.LoggerFactory
+import com.alibaba.fastjson2.parseArray
+import com.alibaba.fastjson2.toJSONString
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
-import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
+import com.ryouonritsu.ic.domain.dto.RentalInfoDTO
 import com.ryouonritsu.ic.domain.protocol.request.CreateRentalInfoRequest
 import com.ryouonritsu.ic.domain.protocol.response.ListRentalInfoResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
@@ -17,70 +17,68 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.support.TransactionTemplate
+import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.persistence.criteria.Predicate
 
-
-
 @Service
-class RentalInfoServiceImpl (
+class RentalInfoServiceImpl(
     private val rentalInfoRepository: RentalInfoRepository,
     private val userRepository: UserRepository,
-    private val redisUtils: RedisUtils,
+    private val transactionTemplate: TransactionTemplate
 ) : RentalInfoService {
-
-    companion object {
-        private val log = LoggerFactory.getLogger(UserServiceImpl::class.java)
-
-    }
+    private val log = LoggerFactory.getLogger(this::class.java)
 
     override fun list(
-        id: String?,
-        customId: String?,
-        roomId: String?,
+        ids: List<Long>?,
+        userId: Long?,
+        roomId: Long?,
+        startTime: LocalDate?,
+        endTime: LocalDate?,
         page: Int,
         limit: Int
     ): Response<ListRentalInfoResponse> {
         val specification = Specification<RentalInfo> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
-            if (!id.isNullOrBlank()) {
-                predicates += cb.equal(root.get<Long>("id"), id)
+            if (!ids.isNullOrEmpty()) predicates += cb.`in`(root.get<Long>("id")).apply {
+                ids.forEach { this.value(it) }
             }
-            if (!customId.isNullOrBlank()) {
-                predicates += cb.equal(root.get<Long>("customId"), customId)
-            }
-            if (!roomId.isNullOrBlank()) {
-                predicates += cb.equal(root.get<Long>("roomId"), roomId)
-            }
-            query.where(*predicates.toTypedArray()).restriction
-
+            if (userId != null) predicates += cb.equal(root.get<Long>("userId"), userId)
+            if (roomId != null) predicates += cb.equal(root.get<Long>("roomId"), roomId)
+            if (startTime != null)
+                predicates += cb.greaterThanOrEqualTo(root["startTime"], startTime)
+            if (endTime != null) predicates += cb.lessThanOrEqualTo(root["endTime"], endTime)
+            predicates += cb.equal(root.get<Boolean>("status"), true)
+            query.where(*predicates.toTypedArray())
+                .orderBy(cb.asc(root.get<LocalDateTime>("createTime")))
+                .restriction
         }
-
-        var result = rentalInfoRepository.findAll(specification, PageRequest.of(page - 1, limit))
+        val result = rentalInfoRepository.findAll(specification, PageRequest.of(page - 1, limit))
         val total = result.totalElements
-        val infos=result.content.map{ it.toDTO()}
-        return Response.success(ListRentalInfoResponse(total,infos))
-
-
+        val list = result.content.map { it.toDTO() }
+        return Response.success(ListRentalInfoResponse(total, list))
     }
 
-
-
-    @org.springframework.transaction.annotation.Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
-    override fun createRentalInfo(request: CreateRentalInfoRequest): Response<Unit> {
-        val user=userRepository.findByIdAndStatus(RequestContext.user!!.id)
+    override fun createRentalInfo(request: CreateRentalInfoRequest): Response<RentalInfoDTO> {
+        val user = userRepository.findByIdAndStatus(RequestContext.user!!.id)
             ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
-        rentalInfoRepository.save(
-            RentalInfo(
-                customId = user.id,
-                roomId = request.roomId!!,
-                startTime = request.startTime,
-                endTime = request.endTime,
-                totalCost = request.totalCost,
-            )
+        var rentalInfo = RentalInfo(
+            userId = user.id,
+            roomId = request.roomId!!,
+            startTime = request.startTime!!,
+            endTime = request.endTime!!,
+            totalCost = request.totalCost!!,
         )
-        return Response.success()
+        transactionTemplate.execute {
+            rentalInfo = rentalInfoRepository.save(rentalInfo)
+            log.info("[RentalInfoServiceImpl.createRentalInfo] save success, id = ${rentalInfo.id}")
+            user.rentalInfoIds = user.rentalInfoIds.parseArray<Long>()
+                .apply { this += rentalInfo.id }
+                .toJSONString()
+            log.info("[RentalInfoServiceImpl.createRentalInfo] now user's rentalInfoIds = ${user.rentalInfoIds}")
+            userRepository.save(user)
+        }
+        return Response.success(rentalInfo.toDTO())
     }
-
-
 }
