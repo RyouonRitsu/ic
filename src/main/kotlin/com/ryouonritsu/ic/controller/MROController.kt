@@ -106,4 +106,21 @@ class MROController(
     )
     fun workerModifyMRO(@RequestBody @Valid request: WorkerModifyMRORequest) =
         mroService.workerModifyMRO(request)
+
+    @ServiceLog(description = "维修人员筛选")
+    @GetMapping("/selectWorker")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
+    @Tag(name = "维修工单接口")
+    @Operation(
+        summary = "维修人员筛选",
+        description = "根据时间和维修类型筛选可用维修人员"
+    )
+    fun selectWorker(
+        @RequestParam(required = false)
+        @Parameter(description = "具体维修日期") actualDate: String?,
+        @RequestParam(required = false)
+        @Parameter(description = "具体维修时间段") actualTime: String?,
+        @RequestParam(required = false)
+        @Parameter(description = "具体维修类型") label: String?
+    ) = mroService.selectWorker(actualDate, actualTime, label)
 }

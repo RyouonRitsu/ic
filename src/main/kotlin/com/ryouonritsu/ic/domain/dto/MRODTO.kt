@@ -25,6 +25,8 @@ data class MRODTO(
     var problem: String = "",
     @Schema(description = "期望维修时间段", example = "1", required = true)
     var expectTime: String = "",
+    @Schema(description = "实际维修日期", example = "1", required = true)
+    var actualDate: String = "",
     @Schema(description = "实际维修时间段", example = "1", required = true)
     var actualTime: String = "",
     @Schema(description = "解决方法", example = "1", required = true)

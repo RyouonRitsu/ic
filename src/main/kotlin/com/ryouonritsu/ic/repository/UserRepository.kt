@@ -15,6 +15,8 @@ import org.springframework.stereotype.Repository
 interface UserRepository : JpaRepositoryImplementation<User, Long> {
     fun findByIdAndStatus(id: Long, status: Boolean = true): User?
 
+    fun findAllByUserTypeAndStatus(userType: Int, status: Boolean = true): List<User>
+
     @Query("SELECT u FROM User u WHERE (u.username = ?1 OR u.email = ?1) AND u.status = true")
     fun findByIdentifier(username: String): User?
 

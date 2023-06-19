@@ -4,6 +4,7 @@ import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.WorkerModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
+import com.ryouonritsu.ic.domain.protocol.response.ListWorkerResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 
 /**
@@ -20,4 +21,8 @@ interface MROService {
     fun adminModifyMRO(request: AdminModifyMRORequest): Response<Unit>
 
     fun workerModifyMRO(request: WorkerModifyMRORequest): Response<Unit>
+
+    fun selectWorker(
+        actualDate: String?, actualTime: String?, label: String?
+    ): Response<ListWorkerResponse>
 }

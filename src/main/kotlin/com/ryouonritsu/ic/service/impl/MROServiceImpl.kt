@@ -6,8 +6,10 @@ import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.WorkerModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
+import com.ryouonritsu.ic.domain.protocol.response.ListWorkerResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.MRO
+import com.ryouonritsu.ic.entity.User
 import com.ryouonritsu.ic.repository.MRORepository
 import com.ryouonritsu.ic.repository.UserRepository
 import com.ryouonritsu.ic.service.MROService
@@ -74,8 +76,7 @@ class MROServiceImpl(
             Response.success(ListMROResponse(total, orders))
         }.onFailure {
             if (it is NoSuchElementException) {
-                redisUtils - "${RequestContext.user!!.id}"
-                return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+                return Response.failure("查询不到用户ID所对应用户")
             }
             log.error(it.stackTraceToString())
         }.getOrDefault(Response.failure("创建失败, 发生意外错误"))
@@ -141,5 +142,48 @@ class MROServiceImpl(
             }
             log.error(it.stackTraceToString())
         }.getOrDefault(Response.failure("修改失败, 发生意外错误"))
+    }
+
+
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun selectWorker(
+        actualDate: String?,
+        actualTime: String?,
+        label: String?
+    ): Response<ListWorkerResponse> {
+        return runCatching {
+            val userType: User.UserType = if (label.equals("water")) {
+                User.UserType.WATER_MAINTENANCE_STAFF
+            } else if (label.equals("electric")) {
+                User.UserType.ELECTRICITY_MAINTENANCE_STAFF
+            } else {
+                User.UserType.MACHINE_MAINTENANCE_STAFF
+            }
+            val userList = userRepository.findAllByUserTypeAndStatus(userType.code).map { it.toDTO() }
+            val specification = Specification<MRO> { root, query, cb ->
+                val predicates = mutableListOf<Predicate>()
+                if (!actualDate.isNullOrBlank()) {
+                    predicates += cb.equal(root.get<String>("actualDate"), actualDate)
+                }
+
+                if (!actualTime.isNullOrBlank()) {
+                    predicates += cb.equal(root.get<String>("actualTime"), actualTime)
+                }
+                predicates += cb.equal(root.get<Boolean>("status"), true)
+                query.where(*predicates.toTypedArray()).restriction
+            }
+            val workers = mroRepository.findAll(specification).map {
+                userRepository.findById(it.workerId).get().id
+            }
+            val res = userList.toSet().filter { !workers.contains(it.id.toLong())}
+            val total = res.size
+            Response.success(ListWorkerResponse(total, res))
+        }.onFailure {
+            if (it is NoSuchElementException) {
+                redisUtils - "${RequestContext.user!!.id}"
+                return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+            }
+            log.error(it.stackTraceToString())
+        }.getOrDefault(Response.failure("查询失败, 发生意外错误"))
     }
 }
