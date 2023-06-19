@@ -260,7 +260,6 @@ class UserServiceImpl(
                         ?: return Response.failure("该邮箱未被注册, 发生意外错误, 请检查数据库")
                     user.password = MD5Util.encode(request.password1)
                     userRepository.save(user)
-                    redisUtils - "${user.id}"
                     Response.success<Unit>("修改成功")
                 }.onFailure { log.error(it.stackTraceToString()) }
                     .getOrDefault(Response.failure("修改失败, 发生意外错误"))
@@ -280,7 +279,6 @@ class UserServiceImpl(
                         return Response.failure("两次密码不一致")
                     user.password = MD5Util.encode(request.password1)
                     userRepository.save(user)
-                    redisUtils - "${user.id}"
                     Response.success<Unit>("修改成功")
                 }.onFailure {
                     if (it is NoSuchElementException) {
