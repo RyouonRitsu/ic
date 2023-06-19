@@ -13,7 +13,13 @@ import com.ryouonritsu.ic.domain.protocol.response.Response
  */
 interface MROService {
     fun list(
-        id: String?, customId: String?, workerId: String?, roomId: String?, isSolved: Boolean?, page: Int, limit: Int
+        id: String?,
+        customId: String?,
+        workerId: String?,
+        roomId: String?,
+        isSolved: Boolean?,
+        page: Int,
+        limit: Int
     ): Response<ListMROResponse>
 
     fun createMRO(request: CreateMRORequest): Response<Unit>

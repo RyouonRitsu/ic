@@ -89,7 +89,9 @@ class RoomServiceImpl(
             if (!request.terminate.isNullOrBlank()) {
                 try {
                     room.terminate =
-                        LocalDate.parse(request.terminate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        LocalDate.parse(
+                            request.terminate, DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                        )
                 } catch (e: Exception) {
                     return Response.failure("租赁开始格式错误，应为yyyy-MM-dd")
                 }
@@ -128,7 +130,8 @@ class RoomServiceImpl(
             if (userid != null) predicates += cb.equal(root.get<Long>("userid"), id)
             if (status != null) predicates += cb.equal(root.get<Long>("status"), id)
             if (commence != null) predicates += cb.equal(root.get<LocalDate>("commence"), commence)
-            if (terminate != null) predicates += cb.equal(root.get<LocalDate>("terminate"), terminate)
+            if (terminate != null)
+                predicates += cb.equal(root.get<LocalDate>("terminate"), terminate)
             if (contract != null) predicates += cb.equal(root.get<Long>("contract"), contract)
             if (!roomInfo.isNullOrBlank()) predicates += cb.like(root["roomInfo"], "%$roomInfo")
             query.where(*predicates.toTypedArray())

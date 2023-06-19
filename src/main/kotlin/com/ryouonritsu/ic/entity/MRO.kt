@@ -42,7 +42,11 @@ class MRO(
     var actualTime: String = "",
     @Column(columnDefinition = "LONGTEXT COMMENT '问题解决方法'", nullable = false)
     var resolvent: String = "",
-    @Column(name = "maintenance_time", columnDefinition = "TEXT COMMENT '具体维修时间'", nullable = false)
+    @Column(
+        name = "maintenance_time",
+        columnDefinition = "TEXT COMMENT '具体维修时间'",
+        nullable = false
+    )
     var maintenanceTime: String = "",
     @Column(
         name = "is_solved",

@@ -71,7 +71,8 @@ class MROServiceImpl(
             val orders = result.content.map { it.toDTO() }
             orders.forEach {
                 it.userInfo = userRepository.findById(it.customId.toLong()).get().toMROUserInfoDTO()
-                it.workerInfo = userRepository.findById(it.workerId.toLong()).get().toMROUserInfoDTO()
+                it.workerInfo =
+                    userRepository.findById(it.workerId.toLong()).get().toMROUserInfoDTO()
             }
             Response.success(ListMROResponse(total, orders))
         }.onFailure {
@@ -159,7 +160,8 @@ class MROServiceImpl(
             } else {
                 User.UserType.MACHINE_MAINTENANCE_STAFF
             }
-            val userList = userRepository.findAllByUserTypeAndStatus(userType.code).map { it.toDTO() }
+            val userList =
+                userRepository.findAllByUserTypeAndStatus(userType.code).map { it.toDTO() }
             val specification = Specification<MRO> { root, query, cb ->
                 val predicates = mutableListOf<Predicate>()
                 if (!actualDate.isNullOrBlank()) {
@@ -175,7 +177,7 @@ class MROServiceImpl(
             val workers = mroRepository.findAll(specification).map {
                 userRepository.findById(it.workerId).get().id
             }
-            val res = userList.toSet().filter { !workers.contains(it.id.toLong())}
+            val res = userList.toSet().filter { !workers.contains(it.id.toLong()) }
             val total = res.size
             Response.success(ListWorkerResponse(total, res))
         }.onFailure {

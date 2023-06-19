@@ -21,4 +21,4 @@ data class CreateMRORequest(
     @field:NotNull
     @Schema(description = "维修类型, example = water, electric, machine", required = true)
     var label: String?,
-    )
+)
