@@ -15,21 +15,26 @@ import com.ryouonritsu.ic.component.process
 import com.ryouonritsu.ic.component.read
 import com.ryouonritsu.ic.domain.dto.RoomDTO
 import com.ryouonritsu.ic.domain.protocol.request.ModifyRoomInfoRequest
+import com.ryouonritsu.ic.domain.protocol.response.ListRoomResponse
 import com.ryouonritsu.ic.repository.RoomRepository
 import com.ryouonritsu.ic.service.RoomService
 import org.springframework.stereotype.Service
 import com.ryouonritsu.ic.domain.protocol.response.Response
+import com.ryouonritsu.ic.entity.Room
 import com.ryouonritsu.ic.entity.RoomFile
 import com.ryouonritsu.ic.repository.RoomFileRepository
 import com.ryouonritsu.ic.service.TableTemplateService
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import javax.persistence.criteria.Predicate
 import kotlin.io.path.Path
 
 /**
@@ -149,6 +154,36 @@ class RoomServiceImpl(
 
     override fun queryHeaders(): Response<List<ColumnDSL>> {
         return Response.success(tableTemplateService.queryHeaders(TemplateType.ROOM_LIST_TEMPLATE))
+    }
+
+    override fun list(
+        id: Long?,
+        userid: Long?,
+        status: Long?,
+        commence: LocalDate?,
+        terminate: LocalDate?,
+        contract: Long?,
+        roomInfo: String?,
+        page: Int,
+        limit: Int
+    ): Response<ListRoomResponse> {
+        val specification = Specification<Room>{ root, query, cb ->
+            val predicates = mutableListOf<Predicate>()
+            if(id != null) predicates += cb.equal(root.get<Long>("id"), id)
+            if(userid != null) predicates += cb.equal(root.get<Long>("userid"), id)
+            if(status != null) predicates += cb.equal(root.get<Long>("status"), id)
+            if(commence != null) predicates += cb.equal(root.get<LocalDate>("commence"), commence)
+            if(terminate != null) predicates += cb.equal(root.get<LocalDate>("terminate"), terminate)
+            if(contract != null) predicates += cb.equal(root.get<Long>("contract"), contract)
+            if(!roomInfo.isNullOrBlank()) predicates += cb.like(root["roomInfo"], "%$roomInfo")
+            query.where(*predicates.toTypedArray())
+                .orderBy(cb.asc(root.get<Long>("id")))
+                .restriction
+        }
+        val result = roomRepository.findAll(specification, PageRequest.of(page - 1, limit))
+        val total = result.totalElements
+        val rooms = result.content.map { it.toDTO() }
+        return Response.success(ListRoomResponse(total, rooms))
     }
 
     override fun download(): XSSFWorkbook {
