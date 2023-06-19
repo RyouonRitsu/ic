@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONArray
 import com.alibaba.fastjson2.parseArray
 import com.alibaba.fastjson2.to
 import com.alibaba.fastjson2.toJSONString
+import com.ryouonritsu.ic.domain.dto.MROUserInfoDTO
 import com.ryouonritsu.ic.domain.dto.UserDTO
 import com.ryouonritsu.ic.domain.dto.UserInfoDTO
 import java.time.LocalDate
@@ -132,5 +133,14 @@ class User(
         userType = userType.toUserType().desc,
         userInfo = userInfo.to(),
         registrationTime = createTime
+    )
+
+    fun toMROUserInfoDTO() = MROUserInfoDTO(
+        id = "$id",
+        email, username, avatar, legalName,
+        gender = gender.toGender().desc,
+        contactName, phone, companyName,
+        position,
+        userType = userType.toUserType().desc,
     )
 }

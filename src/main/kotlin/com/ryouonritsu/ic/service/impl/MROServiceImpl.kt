@@ -67,7 +67,8 @@ class MROServiceImpl(
             val total = result.totalElements
             val orders = result.content.map { it.toDTO() }
             orders.forEach {
-                it.userInfo = userRepository.findById(it.customId.toLong()).get().toDTO()
+                it.userInfo = userRepository.findById(it.customId.toLong()).get().toMROUserInfoDTO()
+                it.workerInfo = userRepository.findById(it.workerId.toLong()).get().toMROUserInfoDTO()
             }
             Response.success(ListMROResponse(total, orders))
         }.onFailure {

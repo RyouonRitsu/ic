@@ -1,7 +1,6 @@
 package com.ryouonritsu.ic.repository
 
 import com.ryouonritsu.ic.entity.MRO
-import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.support.JpaRepositoryImplementation
 import org.springframework.stereotype.Repository
 
@@ -12,6 +11,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface MRORepository : JpaRepositoryImplementation<MRO, Long> {
-    @Query("SELECT o FROM MRO o WHERE o.id = ?1 AND o.status = true")
-    fun findByIdAndStatus(id: Long): MRO?
+    fun findByIdAndStatus(id: Long, status: Boolean = true): MRO?
 }

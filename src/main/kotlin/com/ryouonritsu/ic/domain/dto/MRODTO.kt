@@ -13,9 +13,11 @@ data class MRODTO(
     @Schema(description = "报修客户ID", example = "1", required = true)
     var customId: String = "",
     @Schema(description = "客户信息", example = "{}", required = true)
-    var userInfo: UserDTO?,
+    var userInfo: MROUserInfoDTO?,
     @Schema(description = "维修工作人员ID", example = "1", required = true)
     var workerId: String = "",
+    @Schema(description = "维修人员信息", example = "{}", required = true)
+    var workerInfo: MROUserInfoDTO?,
     @Schema(description = "报修房间ID", example = "1", required = true)
     var roomId: String = "",
     @Schema(description = "问题描述", example = "1", required = true)
