@@ -32,7 +32,8 @@ enum class ExceptionEnum(
     INSUFFICIENT_BALANCE("10010", "insufficient balance"),
     INSUFFICIENT_AMOUNT("10011", "insufficient amount"),
     DATA_DUPLICATION("10012", "data duplication"),
-    MISSING_DATA("10013", "missing data");
+    MISSING_DATA("10013", "missing data"),
+    DATA_CONFLICT("10014", "data conflict");
 
     companion object {
         fun getByCode(code: String) = values().first { it.code == code }

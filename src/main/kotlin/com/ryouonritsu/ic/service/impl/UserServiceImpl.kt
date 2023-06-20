@@ -514,6 +514,9 @@ class UserServiceImpl(
     override fun upload(file: MultipartFile): Response<Unit> {
         val excelSheetDefinitions = getExcelSheetDefinitions()
         val users = file.read(excelSheetDefinitions, UserUploadConverter::convert)
+        val identifierList = users.map { it.username } + users.map { it.email }
+        if (userRepository.findByIdentifierList(identifierList).isNotEmpty())
+            throw ServiceException(ExceptionEnum.DATA_CONFLICT)
         userRepository.saveAll(users)
         return Response.success("上传成功")
     }

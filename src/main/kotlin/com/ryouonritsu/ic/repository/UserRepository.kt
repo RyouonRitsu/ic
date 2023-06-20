@@ -20,6 +20,9 @@ interface UserRepository : JpaRepositoryImplementation<User, Long> {
     @Query("SELECT u FROM User u WHERE (u.username = ?1 OR u.email = ?1) AND u.status = true")
     fun findByIdentifier(identifier: String): User?
 
+    @Query("SELECT u FROM User u WHERE (u.username IN ?1 OR u.email IN ?1) AND u.status = true")
+    fun findByIdentifierList(identifierList: List<String>): List<User>
+
     @Query("SELECT u FROM User u WHERE u.email = ?1 AND u.status = true")
     fun findByEmail(email: String): User?
 
