@@ -59,8 +59,8 @@ class User(
     var companyName: String = "",
     @Column(name = "rental_info_ids", columnDefinition = "TEXT COMMENT '租赁信息id序列'")
     var rentalInfoIds: String = JSONArray().toJSONString(),
-    @Column(name = "payment_info", columnDefinition = "TEXT COMMENT '缴纳信息id序列'")
-    var paymentInfo: String = JSONArray().toJSONString(),
+    @Column(name = "payment_info_ids", columnDefinition = "TEXT COMMENT '缴纳信息id序列'")
+    var paymentInfoIds: String = JSONArray().toJSONString(),
     @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '职位'", nullable = false)
     var position: String = "",
     @Column(
@@ -128,7 +128,7 @@ class User(
         gender = gender.toGender().desc,
         birthday, contactName, phone, location, companyName,
         rentalInfoIds = rentalInfoIds.parseArray<String>(),
-        paymentInfo = paymentInfo.parseArray<String>(),
+        paymentInfoIds = paymentInfoIds.parseArray<String>(),
         position,
         userType = userType.toUserType().desc,
         userInfo = userInfo.to(),

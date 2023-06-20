@@ -34,7 +34,7 @@ data class UserDTO(
     @Schema(description = "租赁信息id序列", example = "[1,2]", required = true)
     var rentalInfoIds: List<String> = listOf(),
     @Schema(description = "缴纳信息id序列", required = true)
-    var paymentInfo: List<String> = listOf(),
+    var paymentInfoIds: List<String> = listOf(),
     @Schema(description = "职位", required = true)
     var position: String = "",
     @Schema(description = "用户类型", example = "客户", required = true)
