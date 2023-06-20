@@ -15,15 +15,15 @@ class Room(
     @Column(columnDefinition = "BIGINT COMMENT '房间ID'", nullable = false)
     var id: Long = 0,
     @Column(name = "user_id", columnDefinition = "BIGINT COMMENT '用户ID'", nullable = true)
-    var userId: Long,
+    var userId: Long?,
     @Column(columnDefinition = "BIGINT COMMENT '租赁状态'", nullable = false)
-    var status: Long,
-    @Column(columnDefinition = "DATE DEFAULT '1900-01-01' COMMENT '签约时间'", nullable = true)
-    var commence: LocalDate = LocalDate.of(1900, 1, 1),
-    @Column(columnDefinition = "DATE DEFAULT '1900-01-01' COMMENT '租赁结束时间'", nullable = true)
-    var terminate: LocalDate = LocalDate.of(1900, 1, 1),
+    var status: Boolean = false,
+    @Column(columnDefinition = "DATE COMMENT '签约时间'", nullable = true)
+    var commence: LocalDate?,
+    @Column(columnDefinition = "DATE COMMENT '租赁结束时间'", nullable = true)
+    var terminate: LocalDate?,
     @Column(columnDefinition = "BIGINT COMMENT '合同ID'", nullable = true)
-    var contract: Long = 0,
+    var contract: Long?,
     @Column(name = "room_info", columnDefinition = "LONGTEXT COMMENT '房间信息JSON'")
     var roomInfo: String = "",
     @Column(columnDefinition = "INT DEFAULT '1' COMMENT '版本'", nullable = false)
@@ -44,7 +44,7 @@ class Room(
     fun toDTO() = RoomDTO(
         id = "$id",
         userId = "$userId",
-        status = "$status",
+        status = status,
         commence, terminate,
         contract = "$contract",
         roomInfo

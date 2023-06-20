@@ -10,16 +10,16 @@ import java.time.LocalDate
 data class RoomDTO(
     @Schema(description = "房间ID", example = "1", required = true)
     var id: String = "0",
-    @Schema(description = "用户ID", example = "1", required = true)
-    var userId: String = "0",
+    @Schema(description = "用户ID", example = "1", required = false)
+    var userId: String?,
     @Schema(description = "租赁状态", example = "1", required = true)
-    var status: String = "0",
-    @Schema(description = "租赁开始日期", example = "1900-01-01", required = true)
+    var status: Boolean = false,
+    @Schema(description = "租赁开始日期", example = "1900-01-01", required = false)
     var commence: LocalDate? = null,
-    @Schema(description = "租赁结束日期", example = "2000-01-01", required = true)
+    @Schema(description = "租赁结束日期", example = "2000-01-01", required = false)
     var terminate: LocalDate? = null,
-    @Schema(description = "合同ID", example = "1", required = true)
-    var contract: String = "0",
+    @Schema(description = "合同ID", example = "1", required = false)
+    var contract: String?,
     @Schema(description = "房间其他信息", example = "无", required = true)
     var roomInfo: String = "无"
 )

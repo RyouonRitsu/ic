@@ -4,13 +4,13 @@ import com.alibaba.fastjson2.parseArray
 import com.alibaba.fastjson2.toJSONString
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
-import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.dto.RentalInfoDTO
 import com.ryouonritsu.ic.domain.protocol.request.CreateRentalInfoRequest
 import com.ryouonritsu.ic.domain.protocol.response.ListRentalInfoResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.RentalInfo
 import com.ryouonritsu.ic.repository.RentalInfoRepository
+import com.ryouonritsu.ic.repository.RoomRepository
 import com.ryouonritsu.ic.repository.UserRepository
 import com.ryouonritsu.ic.service.RentalInfoService
 import org.slf4j.LoggerFactory
@@ -21,11 +21,13 @@ import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.criteria.Predicate
+import kotlin.jvm.optionals.getOrElse
 
 @Service
 class RentalInfoServiceImpl(
     private val rentalInfoRepository: RentalInfoRepository,
     private val userRepository: UserRepository,
+    private val roomRepository: RoomRepository,
     private val transactionTemplate: TransactionTemplate
 ) : RentalInfoService {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -61,15 +63,22 @@ class RentalInfoServiceImpl(
     }
 
     override fun createRentalInfo(request: CreateRentalInfoRequest): Response<RentalInfoDTO> {
-        val user = userRepository.findByIdAndStatus(RequestContext.user!!.id)
+        val user = userRepository.findByIdAndStatus(request.userId!!)
             ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
+        val room = roomRepository.findById(request.roomId!!).getOrElse {
+            throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
+        }
         var rentalInfo = RentalInfo(
-            userId = user.id,
-            roomId = request.roomId!!,
+            userId = request.userId,
+            roomId = request.roomId,
             startTime = request.startTime!!,
             endTime = request.endTime!!,
             totalCost = request.totalCost!!,
         )
+        room.userId = request.userId
+        room.commence = request.startTime
+        room.terminate = request.endTime
+        room.status = true
         transactionTemplate.execute {
             rentalInfo = rentalInfoRepository.save(rentalInfo)
             log.info("[RentalInfoServiceImpl.createRentalInfo] save success, id = ${rentalInfo.id}")
@@ -78,6 +87,7 @@ class RentalInfoServiceImpl(
                 .toJSONString()
             log.info("[RentalInfoServiceImpl.createRentalInfo] now user's rentalInfoIds = ${user.rentalInfoIds}")
             userRepository.save(user)
+            roomRepository.save(room)
         }
         return Response.success(rentalInfo.toDTO())
     }

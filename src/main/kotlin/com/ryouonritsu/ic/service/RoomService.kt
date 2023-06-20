@@ -13,14 +13,13 @@ import java.time.LocalDate
  * @author PaulManstein
  */
 interface RoomService {
-    fun showInfo(roomId: Long): Response<RoomDTO>
-    fun selectRoomById(roomId: Long): Response<List<RoomDTO>>
+    fun selectRoomById(roomId: Long): Response<RoomDTO>
     fun modifyRoomInfo(request: ModifyRoomInfoRequest): Response<Unit>
     fun queryHeaders(): Response<List<ColumnDSL>>
     fun list(
         id: Long?,
         userId: Long?,
-        status: Long?,
+        status: Boolean?,
         commence: LocalDate?,
         terminate: LocalDate?,
         contract: Long?,

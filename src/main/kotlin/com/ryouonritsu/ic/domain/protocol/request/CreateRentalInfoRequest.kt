@@ -8,6 +8,9 @@ import javax.validation.constraints.NotNull
 @Schema(description = "创建租赁信息")
 data class CreateRentalInfoRequest(
     @field:NotNull
+    @Schema(description = "租赁用户id", required = true)
+    val userId: Long?,
+    @field:NotNull
     @Schema(description = "房间id", required = true)
     val roomId: Long?,
     @field:NotNull

@@ -1,12 +1,10 @@
 package com.ryouonritsu.ic.service.impl
 
-import com.ryouonritsu.ic.common.constants.ICConstant.LONG_MINUS_1
 import com.ryouonritsu.ic.common.constants.TemplateType
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RedisUtils.Companion.log
-import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.component.ColumnDSL
 import com.ryouonritsu.ic.component.file.ExcelSheetDefinition
 import com.ryouonritsu.ic.component.file.converter.RoomUploadConverter
@@ -29,8 +27,8 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.persistence.criteria.Predicate
+import kotlin.jvm.optionals.getOrElse
 
 /**
  * @author PaulManstein
@@ -41,66 +39,26 @@ class RoomServiceImpl(
     private val roomRepository: RoomRepository,
     private val tableTemplateService: TableTemplateService
 ) : RoomService {
-    override fun showInfo(roomId: Long): Response<RoomDTO> {
-        return runCatching {
-            val room = roomRepository.findById(roomId).get()
-            Response.success("获取成功", room.toDTO())
-        }.onFailure {
-            if (it is NoSuchElementException) {
-                redisUtils - "$roomId"
-                return Response.failure("数据库中没有此房间，此会话已失效")
-            }
-            log.error(it.stackTraceToString())
-        }.getOrDefault(
-            Response.failure("获取失败，发生意外错误")
-        )
-    }
-
-    override fun selectRoomById(roomId: Long): Response<List<RoomDTO>> {
-        return runCatching {
-            val room = roomRepository.findById(roomId).get()
-            Response.success("获取成功", listOf(room.toDTO()))
-        }.onFailure {
-            if (it is NoSuchElementException) return Response.failure("数据库中没有此房间")
-            log.error(it.stackTraceToString())
-        }.getOrDefault(Response.failure("获取失败，发生意外错误"))
+    override fun selectRoomById(roomId: Long): Response<RoomDTO> {
+        val room = roomRepository.findById(roomId).getOrElse {
+            throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
+        }
+        return Response.success("获取成功", room.toDTO())
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun modifyRoomInfo(request: ModifyRoomInfoRequest): Response<Unit> {
-        return runCatching {
-            val room = roomRepository.findById(request.id ?: RequestContext.room!!.id).get()
-            if (request.userId != LONG_MINUS_1) room.userId = request.userId!!
-            if (request.status != LONG_MINUS_1) room.status = request.status!!
-            if (!request.commence.isNullOrBlank()) {
-                try {
-                    room.commence =
-                        LocalDate.parse(request.commence, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                } catch (e: Exception) {
-                    return Response.failure("租赁开始格式错误，应为yyyy-MM-dd")
-                }
-            }
-            if (!request.terminate.isNullOrBlank()) {
-                try {
-                    room.terminate =
-                        LocalDate.parse(
-                            request.terminate, DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                        )
-                } catch (e: Exception) {
-                    return Response.failure("租赁开始格式错误，应为yyyy-MM-dd")
-                }
-            }
-            if (request.contract != LONG_MINUS_1) room.contract = request.contract!!
-            if (!request.roomInfo.isNullOrBlank()) room.roomInfo = request.roomInfo!!
-            roomRepository.save(room)
-            Response.success<Unit>("修改成功")
-        }.onFailure {
-            if (it is NoSuchElementException) {
-                redisUtils - "${RequestContext.room!!.id}"
-                return Response.failure("数据库中没有此房间或可能是token验证失败, 此会话已失效")
-            }
-            log.error(it.stackTraceToString())
-        }.getOrDefault(Response.failure("修改失败，发生意外错误"))
+        val room = roomRepository.findById(request.id!!).getOrElse {
+            throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
+        }
+        if (request.userId != null) room.userId = request.userId!!
+        if (request.status != null) room.status = request.status!!
+        if (request.commence != null) room.commence = request.commence!!
+        if (request.terminate != null) room.terminate = request.terminate!!
+        if (request.contract != null) room.contract = request.contract!!
+        if (!request.roomInfo.isNullOrBlank()) room.roomInfo = request.roomInfo!!
+        roomRepository.save(room)
+        return Response.success("修改成功")
     }
 
     override fun queryHeaders(): Response<List<ColumnDSL>> {
@@ -110,7 +68,7 @@ class RoomServiceImpl(
     override fun list(
         id: Long?,
         userId: Long?,
-        status: Long?,
+        status: Boolean?,
         commence: LocalDate?,
         terminate: LocalDate?,
         contract: Long?,
@@ -121,13 +79,12 @@ class RoomServiceImpl(
         val specification = Specification<Room> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
             if (id != null) predicates += cb.equal(root.get<Long>("id"), id)
-            if (userId != null) predicates += cb.equal(root.get<Long>("userId"), id)
-            if (status != null) predicates += cb.equal(root.get<Long>("status"), id)
-            if (commence != null) predicates += cb.equal(root.get<LocalDate>("commence"), commence)
-            if (terminate != null)
-                predicates += cb.equal(root.get<LocalDate>("terminate"), terminate)
+            if (userId != null) predicates += cb.equal(root.get<Long>("userId"), userId)
+            if (status != null) predicates += cb.equal(root.get<Boolean>("status"), status)
+            if (commence != null) predicates += cb.greaterThanOrEqualTo(root["commence"], commence)
+            if (terminate != null) predicates += cb.lessThanOrEqualTo(root["terminate"], terminate)
             if (contract != null) predicates += cb.equal(root.get<Long>("contract"), contract)
-            if (!roomInfo.isNullOrBlank()) predicates += cb.like(root["roomInfo"], "%$roomInfo")
+            if (!roomInfo.isNullOrBlank()) predicates += cb.like(root["roomInfo"], "%$roomInfo%")
             query.where(*predicates.toTypedArray())
                 .orderBy(cb.asc(root.get<Long>("id")))
                 .restriction
@@ -149,10 +106,7 @@ class RoomServiceImpl(
 
     override fun downloadTemplate(): XSSFWorkbook {
         val excelSheetDefinitions = getExcelSheetDefinitions()
-        val room = RoomDTO(
-            status = "0"
-        )
-        return XSSFWorkbook().getTemplate(excelSheetDefinitions, listOf(room))
+        return XSSFWorkbook().getTemplate(excelSheetDefinitions, listOf<Room>())
     }
 
     private fun getExcelSheetDefinitions(): List<ExcelSheetDefinition> {

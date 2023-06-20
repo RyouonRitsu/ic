@@ -67,11 +67,11 @@ class RoomController(
         @RequestParam(
             "status",
             required = false
-        ) @Parameter(description = "租赁状态,精确") status: Long?,
+        ) @Parameter(description = "租赁状态,精确") status: Boolean?,
         @RequestParam(
             "commence",
             required = false
-        ) @Parameter(description = "租赁开始日期,精确") commmence: LocalDate?,
+        ) @Parameter(description = "租赁开始日期,精确") commence: LocalDate?,
         @RequestParam(
             "terminate",
             required = false
@@ -93,7 +93,7 @@ class RoomController(
             required = true
         ) @Valid @NotNull @Min(1) limit: Int?
     ) = roomService.list(
-        id, userId, status, commmence, terminate, contract, roomInfo, page!!, limit!!
+        id, userId, status, commence, terminate, contract, roomInfo, page!!, limit!!
     )
 
     @ServiceLog(description = "查询房间列表表头")
