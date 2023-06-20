@@ -68,6 +68,8 @@ class RentalInfoServiceImpl(
         val room = roomRepository.findById(request.roomId!!).getOrElse {
             throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
         }
+        if (room.status) return Response.failure("房间已被租赁")
+
         var rentalInfo = RentalInfo(
             userId = request.userId,
             roomId = request.roomId,
