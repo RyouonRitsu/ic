@@ -3,7 +3,6 @@ package com.ryouonritsu.ic.controller
 import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.annotation.ServiceLog
 import com.ryouonritsu.ic.common.enums.AuthEnum
-import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.WorkerModifyMRORequest
@@ -27,7 +26,6 @@ import javax.validation.constraints.NotNull
 @RequestMapping("/mro")
 @Tag(name = "维修工单接口")
 class MROController(
-    private val redisUtils: RedisUtils,
     private val mroService: MROService,
 ) {
     companion object {
@@ -76,7 +74,7 @@ class MROController(
 
     @ServiceLog(description = "用户创建维修工单")
     @PostMapping("/createMRO")
-    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.CLIENT])
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.CLIENT])
     @Tag(name = "维修工单接口")
     @Operation(
         summary = "用户创建维修工单",
@@ -98,7 +96,7 @@ class MROController(
 
     @ServiceLog(description = "维修人员修改维修工单")
     @PostMapping("/workerModifyMRO")
-    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.MAINTENANCE_STAFF])
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.MAINTENANCE_STAFF])
     @Tag(name = "维修工单接口")
     @Operation(
         summary = "维修人员修改维修工单",

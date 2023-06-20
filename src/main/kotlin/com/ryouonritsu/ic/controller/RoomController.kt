@@ -1,8 +1,9 @@
 package com.ryouonritsu.ic.controller
 
+import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.annotation.ServiceLog
+import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.common.utils.DownloadUtils
-import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.service.RoomService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -28,14 +29,14 @@ import javax.validation.constraints.NotNull
 @RequestMapping("/room")
 @Tag(name = "房间接口")
 class RoomController(
-    private val roomService: RoomService,
-    private val redisUtils: RedisUtils
+    private val roomService: RoomService
 ) {
     companion object {
         private val log = LoggerFactory.getLogger(RoomController::class.java)
     }
 
     @ServiceLog(description = "根据房间ID查询房间信息")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
     @GetMapping("/selectRoomByRoomId")
     @Tag(name = "房间接口")
     @Operation(summary = "根据房间ID查询房间信息")
@@ -44,9 +45,10 @@ class RoomController(
             description = "房间id",
             required = true
         ) roomId: Long
-    ) = roomService.selectRoomById(roomId)//
+    ) = roomService.selectRoomById(roomId)
 
     @ServiceLog(description = "查询房间列表")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
     @GetMapping("/list")
     @Tag(name = "房间接口")
     @Operation(
@@ -95,6 +97,7 @@ class RoomController(
     )
 
     @ServiceLog(description = "查询房间列表表头")
+    @AuthCheck
     @GetMapping("/queryHeaders")
     @Tag(name = "房间接口")
     @Operation(
@@ -104,6 +107,7 @@ class RoomController(
     fun queryHeaders() = roomService.queryHeaders()
 
     @ServiceLog(description = "房间上传模板下载", printResponse = false)
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
     @GetMapping("/downloadTemplate")
     @Tag(name = "房间接口")
     @Operation(
