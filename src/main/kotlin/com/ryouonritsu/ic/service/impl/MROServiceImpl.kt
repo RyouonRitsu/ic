@@ -71,7 +71,9 @@ class MROServiceImpl(
                     )
                 }
                 predicates += cb.equal(root.get<Boolean>("status"), true)
-                query.where(*predicates.toTypedArray()).restriction
+                query.where(*predicates.toTypedArray())
+                    .orderBy(cb.asc(root.get<Boolean>("isSolved")))
+                    .restriction
             }
             val result = mroRepository.findAll(specification, PageRequest.of(page - 1, limit))
             val total = result.totalElements
