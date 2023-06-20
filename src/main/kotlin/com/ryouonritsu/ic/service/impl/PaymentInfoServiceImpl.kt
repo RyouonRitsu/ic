@@ -6,6 +6,7 @@ import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.dto.PaymentInfoDTO
+import com.ryouonritsu.ic.domain.dto.PaymentStatusDTO
 import com.ryouonritsu.ic.domain.protocol.request.AddPaymentRequest
 import com.ryouonritsu.ic.domain.protocol.response.ListResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
@@ -84,7 +85,7 @@ class PaymentInfoServiceImpl(
         return Response.success(ListResponse(list, total))
     }
 
-    override fun queryStatusByUserId(userId: Long?): Response<Map<String, Any>> {
+    override fun queryStatusByUserId(userId: Long?): Response<Map<String, Map<Int, PaymentStatusDTO>>> {
         val user = if (userId == null) RequestContext.user!!
         else userRepository.findByIdAndStatus(userId)
             ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
@@ -93,7 +94,7 @@ class PaymentInfoServiceImpl(
         if (rentalInfoIds.isNullOrEmpty())
             return Response.success(mapOf())
 
-        val result = mutableMapOf<String, Any>()
+        val result = mutableMapOf<String, Map<Int, PaymentStatusDTO>>()
         rentalInfoIds.forEach { rentalInfoId ->
             val rentalInfo = rentalInfoRepository.findById(rentalInfoId).getOrElse {
                 log.error("[PaymentServiceImpl.queryStatusByUserId] can not find rentalInfo by id = $rentalInfoId")
@@ -102,11 +103,11 @@ class PaymentInfoServiceImpl(
             val yearRange = rentalInfo.startTime.year..rentalInfo.endTime.year
             log.info("[PaymentServiceImpl.queryStatusByUserId] for $rentalInfoId, yearRange is $yearRange")
 
-            val re = mutableMapOf<Int, Any>()
+            val re = mutableMapOf<Int, PaymentStatusDTO>()
 
             fun putDefaultResult() {
                 result["$rentalInfoId"] = re.apply {
-                    yearRange.forEach { this[it] = mapOf("paymentStatus" to false) }
+                    yearRange.forEach { this[it] = PaymentStatusDTO(false) }
                 }
             }
 
@@ -126,11 +127,11 @@ class PaymentInfoServiceImpl(
                 .groupBy { it.createTime.year }
             for (i in yearRange) {
                 if (i in year2PaymentInfo) {
-                    re[i] = mapOf(
-                        "paymentStatus" to true,
-                        "paymentInfoList" to year2PaymentInfo[i]?.map { it.toDTO() }
+                    re[i] = PaymentStatusDTO(
+                        true,
+                        year2PaymentInfo[i]?.map { it.toDTO() }
                     )
-                } else re[i] = mapOf("paymentStatus" to false)
+                } else re[i] = PaymentStatusDTO(false)
             }
             result["$rentalInfoId"] = re
         }

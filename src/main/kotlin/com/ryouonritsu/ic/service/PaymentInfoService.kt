@@ -1,6 +1,7 @@
 package com.ryouonritsu.ic.service
 
 import com.ryouonritsu.ic.domain.dto.PaymentInfoDTO
+import com.ryouonritsu.ic.domain.dto.PaymentStatusDTO
 import com.ryouonritsu.ic.domain.protocol.request.AddPaymentRequest
 import com.ryouonritsu.ic.domain.protocol.response.ListResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
@@ -19,5 +20,5 @@ interface PaymentInfoService {
         limit: Int
     ): Response<ListResponse<PaymentInfoDTO>>
 
-    fun queryStatusByUserId(userId: Long?): Response<Map<String, Any>>
+    fun queryStatusByUserId(userId: Long?): Response<Map<String, Map<Int, PaymentStatusDTO>>>
 }
