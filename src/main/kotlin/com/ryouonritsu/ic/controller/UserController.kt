@@ -200,9 +200,9 @@ class UserController(
     )
     fun list(
         @RequestParam(
-            "id",
+            "ids",
             required = false
-        ) @Parameter(description = "id，精确") id: Long?,
+        ) @Parameter(description = "id集合，如1,2,3，精确") ids: List<Long>?,
         @RequestParam(
             "username",
             required = false
@@ -248,7 +248,7 @@ class UserController(
             required = true
         ) @Valid @NotNull @Min(1) limit: Int?
     ) = userService.list(
-        id, username, legalName, gender?.code,
+        ids, username, legalName, gender?.code,
         contactName, phone, location, companyName,
         position, userType?.code, page!!, limit!!
     )
@@ -263,9 +263,9 @@ class UserController(
     )
     fun download(
         @RequestParam(
-            "id",
+            "ids",
             required = false
-        ) @Parameter(description = "id，精确") id: Long?,
+        ) @Parameter(description = "id集合，如1,2,3，精确") ids: List<Long>?,
         @RequestParam(
             "username",
             required = false
@@ -305,7 +305,7 @@ class UserController(
     ): ResponseEntity<ByteArray> {
         try {
             userService.download(
-                id, username, legalName, gender?.code, contactName,
+                ids, username, legalName, gender?.code, contactName,
                 phone, location, companyName, position, userType?.code
             ).use { workbook ->
                 ByteArrayOutputStream().use { os ->

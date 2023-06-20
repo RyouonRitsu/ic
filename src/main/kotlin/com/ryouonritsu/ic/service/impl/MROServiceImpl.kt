@@ -65,8 +65,10 @@ class MROServiceImpl(
                     predicates += cb.equal(root.get<Boolean>("isSolved"), isSolved)
                 }
                 if (!keyword.isNullOrBlank()) {
-                    predicates += cb.or(cb.like(root.get("problem"), "%$keyword%"),
-                        cb.like(root.get("resolvent"), "%$keyword%"))
+                    predicates += cb.or(
+                        cb.like(root.get("problem"), "%$keyword%"),
+                        cb.like(root.get("resolvent"), "%$keyword%")
+                    )
                 }
                 predicates += cb.equal(root.get<Boolean>("status"), true)
                 query.where(*predicates.toTypedArray()).restriction

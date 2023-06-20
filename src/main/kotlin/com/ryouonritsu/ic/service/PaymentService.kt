@@ -3,8 +3,6 @@ package com.ryouonritsu.ic.service
 import com.ryouonritsu.ic.domain.dto.PaymentDTO
 import com.ryouonritsu.ic.domain.protocol.request.AddPaymentRequest
 import com.ryouonritsu.ic.domain.protocol.response.Response
-import org.springframework.web.multipart.MultipartFile
-import javax.persistence.Id
 
 /**
  * @author PaulManstein

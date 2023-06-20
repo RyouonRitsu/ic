@@ -29,5 +29,6 @@ class PaymentController(
     @PostMapping("/addPayment")
     @Tag(name = "缴费单接口")
     @Operation(summary = "增加新的缴费单", description = "需要填写5个参数")
-    fun addPayment(@RequestBody @Valid request: AddPaymentRequest) = paymentService.addPayment(request)
+    fun addPayment(@RequestBody @Valid request: AddPaymentRequest) =
+        paymentService.addPayment(request)
 }

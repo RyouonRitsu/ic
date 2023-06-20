@@ -13,7 +13,7 @@ data class AddPaymentRequest(
     @field:NotBlank
     @Schema(description = "租赁合同ID", example = "1", required = true)
     var rentid: Long?,
-    @Schema(description = "房间ID", example = "1" , required = true)
+    @Schema(description = "房间ID", example = "1", required = true)
     var roomid: Long?,
     @Schema(description = "缴费时间", example = "1900-01-01", required = true)
     var paytime: LocalDate?,

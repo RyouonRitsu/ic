@@ -20,7 +20,7 @@ class Payment(
     @Column(columnDefinition = "BIGINT COMMENT '房间ID", nullable = false)
     var roomid: Long = 0,
     @Column(columnDefinition = "DATE DEFAULT '1900-01-01' COMMENT '缴费时间'", nullable = false)
-    var paytime: LocalDate = LocalDate.of(1900,1,1),
+    var paytime: LocalDate = LocalDate.of(1900, 1, 1),
     @Column(columnDefinition = "BigDemical DEFAULT 0.0 COMMENt '缴纳金额", nullable = false)
     var expense: BigDecimal = BigDecimal(0.0)
 )

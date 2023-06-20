@@ -7,9 +7,7 @@ import com.ryouonritsu.ic.entity.Payment
 import com.ryouonritsu.ic.repository.PaymentRepository
 import com.ryouonritsu.ic.service.PaymentService
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
-import org.springframework.web.multipart.MultipartFile
 
 /**
  * @author PaulManstein
@@ -18,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile
 class PaymentServiceImpl(
     private val paymentRepository: PaymentRepository,
 ) : PaymentService {
-    companion object{
+    companion object {
         private val log = LoggerFactory.getLogger(PaymentServiceImpl::class.java)
     }
 

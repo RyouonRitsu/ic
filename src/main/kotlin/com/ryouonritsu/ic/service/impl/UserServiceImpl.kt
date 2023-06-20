@@ -423,7 +423,7 @@ class UserServiceImpl(
     }
 
     override fun list(
-        id: Long?,
+        ids: List<Long>?,
         username: String?,
         legalName: String?,
         gender: Int?,
@@ -438,7 +438,9 @@ class UserServiceImpl(
     ): Response<ListUserResponse> {
         val specification = Specification<User> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
-            if (id != null) predicates += cb.equal(root.get<Long>("id"), id)
+            if (!ids.isNullOrEmpty()) predicates += cb.`in`(root.get<Long>("id")).apply {
+                ids.forEach { this.value(it) }
+            }
             if (!username.isNullOrBlank()) predicates += cb.like(root["username"], "%$username%")
             if (!legalName.isNullOrBlank()) predicates += cb.like(root["legalName"], "%$legalName%")
             if (gender != null) predicates += cb.equal(root.get<Int>("gender"), gender)
@@ -463,7 +465,7 @@ class UserServiceImpl(
     }
 
     override fun download(
-        id: Long?,
+        ids: List<Long>?,
         username: String?,
         legalName: String?,
         gender: Int?,
@@ -479,7 +481,7 @@ class UserServiceImpl(
             throw ServiceException(ExceptionEnum.TEMPLATE_NOT_EXIST)
         }
         val data = list(
-            id, username, legalName, gender,
+            ids, username, legalName, gender,
             contactName, phone, location, companyName,
             position, userType, INT_1, INT_20000
         ).data?.list ?: run {

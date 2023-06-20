@@ -25,7 +25,7 @@ interface UserService {
     fun modifyEmail(request: ModifyEmailRequest): Response<Unit>
     fun queryHeaders(): Response<List<ColumnDSL>>
     fun list(
-        id: Long?,
+        ids: List<Long>?,
         username: String?,
         legalName: String?,
         gender: Int?,
@@ -40,7 +40,7 @@ interface UserService {
     ): Response<ListUserResponse>
 
     fun download(
-        id: Long?,
+        ids: List<Long>?,
         username: String?,
         legalName: String?,
         gender: Int?,
