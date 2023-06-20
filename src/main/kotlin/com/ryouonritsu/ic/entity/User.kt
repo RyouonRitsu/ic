@@ -26,7 +26,7 @@ class User(
     var username: String,
     @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '密码'", nullable = false)
     var password: String,
-    @Column(columnDefinition = "TEXT COMMENT '头像地址'")
+    @Column(columnDefinition = "VARCHAR(255) DEFAULT 'http://10.251.254.244:8090/file/17/1687232887956_default_avatar.jpeg' COMMENT '头像地址'")
     var avatar: String = "",
     @Column(
         name = "legal_name",
