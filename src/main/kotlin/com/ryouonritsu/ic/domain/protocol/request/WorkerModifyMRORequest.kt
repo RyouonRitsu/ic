@@ -1,6 +1,7 @@
 package com.ryouonritsu.ic.domain.protocol.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 
 /**
@@ -10,12 +11,15 @@ import javax.validation.constraints.NotNull
 @Schema(description = "维修人员修改维修工单")
 data class WorkerModifyMRORequest(
     @field:NotNull
+    @field:NotBlank
     @Schema(description = "工单ID", required = true)
     var id: String?,
     @field:NotNull
+    @field:NotBlank
     @Schema(description = "解决办法", required = true)
     var resolvent: String?,
     @field:NotNull
+    @field:NotBlank
     @Schema(description = "维修时间段", required = true)
     var maintenanceTime: String?,
 )
