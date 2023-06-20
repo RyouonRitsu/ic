@@ -54,6 +54,9 @@ class MROController(
         @RequestParam(
             required = false
         ) @Parameter(description = "是否解决，精确") isSolved: Boolean?,
+        @RequestParam(
+            required = false
+        ) @Parameter(description = "关键词，模糊") keyword: String?,
         @RequestParam("page") @Parameter(
             description = "页码, 从1开始",
             required = true
@@ -68,6 +71,7 @@ class MROController(
         workerId,
         roomId,
         isSolved,
+        keyword,
         page!!,
         limit!!
     )

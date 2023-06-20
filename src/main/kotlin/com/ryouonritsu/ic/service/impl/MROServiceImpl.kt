@@ -42,6 +42,7 @@ class MROServiceImpl(
         workerId: String?,
         roomId: String?,
         isSolved: Boolean?,
+        keyword: String?,
         page: Int,
         limit: Int
     ): Response<ListMROResponse> {
@@ -63,6 +64,10 @@ class MROServiceImpl(
                 if (isSolved != null) {
                     predicates += cb.equal(root.get<Boolean>("isSolved"), isSolved)
                 }
+                if (!keyword.isNullOrBlank()) {
+                    predicates += cb.or(cb.like(root.get("problem"), "%$keyword%"),
+                        cb.like(root.get("resolvent"), "%$keyword%"))
+                }
                 predicates += cb.equal(root.get<Boolean>("status"), true)
                 query.where(*predicates.toTypedArray()).restriction
             }
@@ -82,7 +87,7 @@ class MROServiceImpl(
                 return Response.failure("查询不到用户ID所对应用户")
             }
             log.error(it.stackTraceToString())
-        }.getOrDefault(Response.failure("创建失败, 发生意外错误"))
+        }.getOrDefault(Response.failure("查询失败, 发生意外错误"))
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
@@ -170,16 +175,13 @@ class MROServiceImpl(
                 if (!actualDate.isNullOrBlank()) {
                     predicates += cb.equal(root.get<String>("actualDate"), actualDate)
                 }
-
                 if (!actualTime.isNullOrBlank()) {
                     predicates += cb.equal(root.get<String>("actualTime"), actualTime)
                 }
                 predicates += cb.equal(root.get<Boolean>("status"), true)
                 query.where(*predicates.toTypedArray()).restriction
             }
-            val workers = mroRepository.findAll(specification).map {
-                userRepository.findById(it.workerId).get().id
-            }
+            val workers = mroRepository.findAll(specification).map { it.workerId }
             val res = userList.toSet().filter { !workers.contains(it.id.toLong()) }
             val total = res.size
             Response.success(ListWorkerResponse(total, res))

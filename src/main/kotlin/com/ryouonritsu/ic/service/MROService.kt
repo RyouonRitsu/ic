@@ -18,6 +18,7 @@ interface MROService {
         workerId: String?,
         roomId: String?,
         isSolved: Boolean?,
+        keyword: String?,
         page: Int,
         limit: Int
     ): Response<ListMROResponse>
