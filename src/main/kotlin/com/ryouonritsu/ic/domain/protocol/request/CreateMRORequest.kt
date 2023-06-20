@@ -19,7 +19,6 @@ data class CreateMRORequest(
     @Schema(description = "期望时间段", required = true)
     var expectTime: String?,
     @field:NotNull
-    @field:NotBlank
     @Schema(description = "报修房间号", required = true)
     var roomId: Long?,
     @field:NotNull
