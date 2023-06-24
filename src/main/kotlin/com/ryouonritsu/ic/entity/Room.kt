@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.entity
 
+import com.ryouonritsu.ic.common.utils.RequestContext.user
 import com.ryouonritsu.ic.domain.dto.RoomDTO
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -41,12 +42,4 @@ class Room(
     )
     var modifyTime: LocalDateTime = LocalDateTime.now(),
 ) {
-    fun toDTO() = RoomDTO(
-        id = "$id",
-        userId = "$userId",
-        status = status,
-        commence, terminate,
-        contract = "$contract",
-        roomInfo
-    )
 }

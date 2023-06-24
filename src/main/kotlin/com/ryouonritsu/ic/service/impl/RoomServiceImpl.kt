@@ -17,6 +17,7 @@ import com.ryouonritsu.ic.domain.protocol.response.ListRoomResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.Room
 import com.ryouonritsu.ic.repository.RoomRepository
+import com.ryouonritsu.ic.repository.UserRepository
 import com.ryouonritsu.ic.service.RoomService
 import com.ryouonritsu.ic.service.TableTemplateService
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -37,13 +38,15 @@ import kotlin.jvm.optionals.getOrElse
 class RoomServiceImpl(
     private val redisUtils: RedisUtils,
     private val roomRepository: RoomRepository,
+    private val userRepository: UserRepository,
     private val tableTemplateService: TableTemplateService
 ) : RoomService {
     override fun selectRoomById(roomId: Long): Response<RoomDTO> {
         val room = roomRepository.findById(roomId).getOrElse {
             throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
         }
-        return Response.success("获取成功", room.toDTO())
+//        return Response.success("获取成功", room.toDTO())
+        return Response.success("获取成功", RoomDTO.from(room))
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
@@ -91,7 +94,7 @@ class RoomServiceImpl(
         }
         val result = roomRepository.findAll(specification, PageRequest.of(page - 1, limit))
         val total = result.totalElements
-        val rooms = result.content.map { it.toDTO() }
+        val rooms = result.content.map { RoomDTO.from(it) }
         return Response.success(ListRoomResponse(total, rooms))
     }
 
@@ -100,7 +103,8 @@ class RoomServiceImpl(
             log.error("[RoomServiceImpl.download] 没有用户列表模板")
             throw ServiceException(ExceptionEnum.TEMPLATE_NOT_EXIST)
         }
-        val data = roomRepository.findAll().map { it.toDTO() }
+//        val data = roomRepository.findAll().map { it.toDTO() }
+        val data = roomRepository.findAll().map { RoomDTO.from(it) }
         return XSSFWorkbook().process(headers, data)
     }
 
@@ -122,5 +126,19 @@ class RoomServiceImpl(
         val rooms = file.read(excelSheetDefinitions, RoomUploadConverter::convert)
         roomRepository.saveAll(rooms)
         return Response.success("上传成功")
+    }
+
+    fun RoomDTO.Companion.from(room: Room): RoomDTO {
+        val id = room.userId!!
+        val user = userRepository.findByIdAndStatus(id, true)!!
+        return RoomDTO(
+                id = room.id.toString(),
+                user = user.toDTO(),
+                status = room.status,
+                commence = room.commence,
+                terminate = room.terminate,
+                contract = room.contract.toString(),
+                roomInfo = room.roomInfo
+                )
     }
 }

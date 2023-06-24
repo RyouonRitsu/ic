@@ -66,7 +66,11 @@ class UserController(
     @Operation(summary = "用户注册", description = "除了真实姓名和头像地址其余必填")
     fun register(@RequestBody @Valid request: RegisterRequest) = userService.register(request)
 
-
+    @ServiceLog(description = "管理员上传单个用户信息")
+    @PostMapping("/addSingleUser")
+    @Tag(name = "管理员专用接口")
+    @Operation(summary = "添加单个用户", description = "")
+    fun addSingleUser(@RequestBody @Valid request: AddSingleUserRequest) = userService.addSingleUser(request)
 
     @ServiceLog(description = "用户登录")
     @PostMapping("/login")

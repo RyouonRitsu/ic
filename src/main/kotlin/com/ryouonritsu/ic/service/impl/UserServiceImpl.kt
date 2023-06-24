@@ -202,6 +202,10 @@ class UserServiceImpl(
         return Response.success("注册成功")
     }
 
+    override fun addSingleUser(request: AddSingleUserRequest): Response<Unit> {
+        TODO("Not yet implemented")
+    }
+
     override fun login(request: LoginRequest): Response<Map<String, Any>> {
         val user = userRepository.findByIdentifier(request.identifier!!)
             ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
