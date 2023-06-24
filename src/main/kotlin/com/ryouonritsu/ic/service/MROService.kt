@@ -17,7 +17,7 @@ interface MROService {
         customId: String?,
         workerId: String?,
         roomId: String?,
-        isSolved: Boolean?,
+        mroStatus: Int?,
         keyword: String?,
         page: Int,
         limit: Int

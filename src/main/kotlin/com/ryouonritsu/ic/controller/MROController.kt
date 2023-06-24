@@ -53,7 +53,7 @@ class MROController(
         ) @Parameter(description = "房间id，精确") roomId: String?,
         @RequestParam(
             required = false
-        ) @Parameter(description = "是否解决，精确") isSolved: Boolean?,
+        ) @Parameter(description = "订单状态，精确") mroStatus: Int?,
         @RequestParam(
             required = false
         ) @Parameter(description = "关键词，模糊") keyword: String?,
@@ -70,7 +70,7 @@ class MROController(
         customId,
         workerId,
         roomId,
-        isSolved,
+        mroStatus,
         keyword,
         page!!,
         limit!!

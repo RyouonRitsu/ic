@@ -65,7 +65,7 @@ class MROServiceImpl(
         customId: String?,
         workerId: String?,
         roomId: String?,
-        isSolved: Boolean?,
+        mroStatus: Int?,
         keyword: String?,
         page: Int,
         limit: Int
@@ -85,8 +85,8 @@ class MROServiceImpl(
                 if (!roomId.isNullOrBlank()) {
                     predicates += cb.equal(root.get<Long>("roomId"), roomId)
                 }
-                if (isSolved != null) {
-                    predicates += cb.equal(root.get<Boolean>("isSolved"), isSolved)
+                if (mroStatus != null) {
+                    predicates += cb.equal(root.get<Int>("mroStatus"), mroStatus)
                 }
                 if (!keyword.isNullOrBlank()) {
                     predicates += cb.or(
