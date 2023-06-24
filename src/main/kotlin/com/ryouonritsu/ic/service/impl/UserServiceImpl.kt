@@ -201,9 +201,18 @@ class UserServiceImpl(
         )
         return Response.success("注册成功")
     }
-
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun addSingleUser(request: AddSingleUserRequest): Response<Unit> {
-        TODO("Not yet implemented")
+        userRepository.save(
+            User(
+                email = request.email!!,
+                username = request.username!!,
+                password = request.password!!,
+                avatar = request.avatar,
+                legalName = request.legalName!!
+            )
+        )
+        return Response.success("添加单个用户成功")
     }
 
     override fun login(request: LoginRequest): Response<Map<String, Any>> {
