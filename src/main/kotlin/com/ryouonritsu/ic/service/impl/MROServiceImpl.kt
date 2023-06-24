@@ -130,6 +130,7 @@ class MROServiceImpl(
             val workerIdList = workerList.keys
             val res = userIdList.toSet().filter { !workerIdList.contains(it) }
             val workerId = res.firstOrNull() ?: workerList
+                .filter { userIdList.contains(it.key) }
                 .minBy { it.value.size }
                 .key
             mroRepository.save(
