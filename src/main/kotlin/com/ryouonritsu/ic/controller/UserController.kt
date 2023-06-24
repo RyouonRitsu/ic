@@ -66,6 +66,8 @@ class UserController(
     @Operation(summary = "用户注册", description = "除了真实姓名和头像地址其余必填")
     fun register(@RequestBody @Valid request: RegisterRequest) = userService.register(request)
 
+
+
     @ServiceLog(description = "用户登录")
     @PostMapping("/login")
     @Tag(name = "用户接口")
