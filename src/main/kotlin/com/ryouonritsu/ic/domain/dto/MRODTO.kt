@@ -33,8 +33,8 @@ data class MRODTO(
     var resolvent: String = "",
     @Schema(description = "实际维修时间", example = "1", required = true)
     var maintenanceTime: String,
-    @Schema(description = "是否解决", example = "0", required = true)
-    var isSolved: Boolean,
+    @Schema(description = "订单状态", example = "0", required = true)
+    var mroStatus: String,
     @Schema(description = "订单创建时间", example = "2023-06-16 18:19:22", required = true)
     var createTime: LocalDateTime,
     @Schema(description = "订单最后修改时间", example = "2023-06-16 18:19:22", required = true)

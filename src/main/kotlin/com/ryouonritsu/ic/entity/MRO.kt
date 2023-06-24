@@ -49,11 +49,11 @@ class MRO(
     )
     var maintenanceTime: String = "",
     @Column(
-        name = "is_solved",
-        columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '是否解决'",
+        name = "mro_status",
+        columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '订单状态'",
         nullable = false
     )
-    var isSolved: Boolean = false,
+    var mroStatus: Int = 0,
     @Column(columnDefinition = "TINYINT(3) DEFAULT '1' COMMENT '生效状态'", nullable = false)
     var status: Boolean = true,
     @Column(columnDefinition = "INT DEFAULT '1' COMMENT '版本'", nullable = false)
@@ -86,7 +86,7 @@ class MRO(
         actualTime = actualTime,
         resolvent = resolvent,
         maintenanceTime = maintenanceTime,
-        isSolved = isSolved,
+        mroStatus = "$mroStatus",
         createTime = createTime,
         modifyTime = modifyTime,
         label = label,

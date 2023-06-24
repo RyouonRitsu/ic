@@ -71,7 +71,7 @@ class MROServiceImpl(
                 }
                 predicates += cb.equal(root.get<Boolean>("status"), true)
                 query.where(*predicates.toTypedArray())
-                    .orderBy(cb.asc(root.get<Boolean>("isSolved")))
+                    .orderBy(cb.asc(root.get<Int>("mroStatus")))
                     .restriction
             }
             val result = mroRepository.findAll(specification, PageRequest.of(page - 1, limit))
@@ -125,6 +125,7 @@ class MROServiceImpl(
             mro.workerId = request.workerId!!.toLong()
             mro.actualDate = request.actualDate!!
             mro.actualTime = request.actualTime!!
+            mro.mroStatus = 1
             mroRepository.save(mro)
             Response.success<Unit>("修改成功")
         }.onFailure {
@@ -144,7 +145,7 @@ class MROServiceImpl(
                 ?: return Response.failure("维修工单不存在")
             mro.resolvent = request.resolvent!!
             mro.maintenanceTime = request.maintenanceTime!!
-            mro.isSolved = true
+            mro.mroStatus = 2
             mroRepository.save(mro)
             Response.success<Unit>("修改成功")
         }.onFailure {
