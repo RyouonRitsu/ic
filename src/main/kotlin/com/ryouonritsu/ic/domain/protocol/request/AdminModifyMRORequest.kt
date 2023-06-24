@@ -20,6 +20,6 @@ data class AdminModifyMRORequest(
     var workerId: String?,
     @Schema(description = "实际维修日期", required = false)
     var actualDate: String?,
-    @Schema(description = "实际维修时间段", required = true)
+    @Schema(description = "实际维修时间段", required = false)
     var actualTime: String?,
 )
