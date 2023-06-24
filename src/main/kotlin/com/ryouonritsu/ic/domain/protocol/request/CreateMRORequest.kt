@@ -14,9 +14,7 @@ data class CreateMRORequest(
     @field:NotBlank
     @Schema(description = "问题描述", required = true)
     var problem: String?,
-    @field:NotNull
-    @field:NotBlank
-    @Schema(description = "期望时间段", required = true)
+    @Schema(description = "期望时间段", required = false)
     var expectTime: String?,
     @field:NotNull
     @Schema(description = "报修房间号", required = true)
@@ -25,4 +23,12 @@ data class CreateMRORequest(
     @field:NotBlank
     @Schema(description = "维修类型, example = water, electric, machine", required = true)
     var label: String?,
+    @field:NotNull
+    @field:NotBlank
+    @Schema(description = "实际维修日期", required = true)
+    var actualDate: String?,
+    @field:NotNull
+    @field:NotBlank
+    @Schema(description = "实际维修时间段", required = true)
+    var actualTime: String?,
 )

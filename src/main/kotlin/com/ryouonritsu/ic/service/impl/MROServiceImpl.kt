@@ -50,6 +50,16 @@ class MROServiceImpl(
         return mroRepository.findAll(specification)
     }
 
+    fun getUserType(label: String?): User.UserType {
+        return if (label.equals("water")) {
+            User.UserType.WATER_MAINTENANCE_STAFF
+        } else if (label.equals("electric")) {
+            User.UserType.ELECTRICITY_MAINTENANCE_STAFF
+        } else {
+            User.UserType.MACHINE_MAINTENANCE_STAFF
+        }
+    }
+
     override fun list(
         id: String?,
         customId: String?,
@@ -112,6 +122,16 @@ class MROServiceImpl(
     override fun createMRO(request: CreateMRORequest): Response<Unit> {
         return runCatching {
             val user = userRepository.findById(RequestContext.user!!.id).get()
+            val userType = getUserType(request.label)
+            val userIdList =
+                userRepository.findAllByUserTypeAndStatus(userType.code).map { it.id }
+            val workerList = getOccupiedWorkers(request.actualDate, request.actualTime)
+                .groupBy { it.workerId }
+            val workerIdList = workerList.keys
+            val res = userIdList.toSet().filter { !workerIdList.contains(it) }
+            val workerId = res.firstOrNull() ?: workerList
+                .minBy { it.value.size }
+                .key
             mroRepository.save(
                 MRO(
                     customId = user.id,
@@ -119,6 +139,7 @@ class MROServiceImpl(
                     expectTime = request.expectTime ?: "",
                     actualDate = request.actualDate!!,
                     actualTime = request.actualTime!!,
+                    workerId = workerId,
                     label = request.label!!,
                     roomId = request.roomId!!,
                 )
@@ -182,13 +203,7 @@ class MROServiceImpl(
         label: String?
     ): Response<ListWorkerResponse> {
         return runCatching {
-            val userType: User.UserType = if (label.equals("water")) {
-                User.UserType.WATER_MAINTENANCE_STAFF
-            } else if (label.equals("electric")) {
-                User.UserType.ELECTRICITY_MAINTENANCE_STAFF
-            } else {
-                User.UserType.MACHINE_MAINTENANCE_STAFF
-            }
+            val userType = getUserType(label)
             val userList =
                 userRepository.findAllByUserTypeAndStatus(userType.code).map { it.toDTO() }
             val workers = getOccupiedWorkers(actualDate, actualTime).map { it.workerId }
