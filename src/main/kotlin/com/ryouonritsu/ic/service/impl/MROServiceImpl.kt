@@ -162,8 +162,12 @@ class MROServiceImpl(
             val mro = mroRepository.findByIdAndStatus(request.id!!.toLong())
                 ?: return Response.failure("维修工单不存在")
             mro.workerId = request.workerId!!.toLong()
-            mro.actualDate = request.actualDate!!
-            mro.actualTime = request.actualTime!!
+            if (!request.actualDate.isNullOrBlank()) {
+                mro.actualDate = request.actualDate!!
+            }
+            if (!request.actualTime.isNullOrBlank()) {
+                mro.actualTime = request.actualTime!!
+            }
             mro.mroStatus = 1
             mroRepository.save(mro)
             Response.success<Unit>("修改成功")
