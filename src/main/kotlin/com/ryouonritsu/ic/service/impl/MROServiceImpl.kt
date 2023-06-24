@@ -35,6 +35,21 @@ class MROServiceImpl(
         private val log = LoggerFactory.getLogger(UserServiceImpl::class.java)
     }
 
+    fun getOccupiedWorkers(actualDate: String?, actualTime: String?): List<MRO> {
+        val specification = Specification<MRO> { root, query, cb ->
+            val predicates = mutableListOf<Predicate>()
+            if (!actualDate.isNullOrBlank()) {
+                predicates += cb.equal(root.get<String>("actualDate"), actualDate)
+            }
+            if (!actualTime.isNullOrBlank()) {
+                predicates += cb.equal(root.get<String>("actualTime"), actualTime)
+            }
+            predicates += cb.equal(root.get<Boolean>("status"), true)
+            query.where(*predicates.toTypedArray()).restriction
+        }
+        return mroRepository.findAll(specification)
+    }
+
     override fun list(
         id: String?,
         customId: String?,
@@ -101,7 +116,9 @@ class MROServiceImpl(
                 MRO(
                     customId = user.id,
                     problem = request.problem!!,
-                    expectTime = request.expectTime!!,
+                    expectTime = request.expectTime ?: "",
+                    actualDate = request.actualDate!!,
+                    actualTime = request.actualTime!!,
                     label = request.label!!,
                     roomId = request.roomId!!,
                 )
@@ -174,19 +191,9 @@ class MROServiceImpl(
             }
             val userList =
                 userRepository.findAllByUserTypeAndStatus(userType.code).map { it.toDTO() }
-            val specification = Specification<MRO> { root, query, cb ->
-                val predicates = mutableListOf<Predicate>()
-                if (!actualDate.isNullOrBlank()) {
-                    predicates += cb.equal(root.get<String>("actualDate"), actualDate)
-                }
-                if (!actualTime.isNullOrBlank()) {
-                    predicates += cb.equal(root.get<String>("actualTime"), actualTime)
-                }
-                predicates += cb.equal(root.get<Boolean>("status"), true)
-                query.where(*predicates.toTypedArray()).restriction
-            }
-            val workers = mroRepository.findAll(specification).map { it.workerId }
-            val res = userList.toSet().filter { !workers.contains(it.id.toLong()) }
+            val workers = getOccupiedWorkers(actualDate, actualTime).map { it.workerId }
+            val workerList = workers.map { userRepository.findByIdAndStatus(it)!!.toDTO() }
+            val res = userList.toSet().filter { !workers.contains(it.id.toLong()) } + workerList
             val total = res.size
             Response.success(ListWorkerResponse(total, res))
         }.onFailure {
