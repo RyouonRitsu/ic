@@ -24,7 +24,7 @@ class NotificationManagerImpl(
     private val userManager: UserManager,
     private val userRepository: UserRepository,
     private val transactionTemplate: TransactionTemplate,
-    private val asyncTaskExecutor: ThreadPoolTaskExecutor
+    private val threadPoolTaskExecutor: ThreadPoolTaskExecutor
 ) : NotificationManager {
     companion object {
         private val log = LoggerFactory.getLogger(NotificationManagerImpl::class.java)
@@ -59,7 +59,7 @@ class NotificationManagerImpl(
     }
 
     private fun asyncSendNotification(requests: List<PublishRequest>) {
-        asyncTaskExecutor.submit {
+        threadPoolTaskExecutor.submit {
             if (requests.isEmpty()) return@submit
 
             val userIds = requests.map { it.userId!! }
@@ -71,7 +71,7 @@ class NotificationManagerImpl(
             }
 
             requests.forEach {
-                val f = asyncTaskExecutor.submitListenable {
+                val f = threadPoolTaskExecutor.submitListenable {
                     val user = users[it.userId]
                         ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
                     val result = userManager.retrySendEmail(

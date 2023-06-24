@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import java.util.concurrent.ThreadPoolExecutor
 
 /**
@@ -24,8 +25,8 @@ class AsyncConfig(
     @Value("\${thread.pool.awaitTerminationMillis}")
     private val awaitTerminationMillis: Int
 ) {
-    @Bean("asyncTaskExecutor")
-    fun asyncTaskExecutor(): ThreadPoolTaskExecutor {
+    @Bean
+    fun threadPoolTaskExecutor(): ThreadPoolTaskExecutor {
         return ThreadPoolTaskExecutor().apply {
             setThreadFactory(
                 ThreadFactoryBuilder()
@@ -46,6 +47,22 @@ class AsyncConfig(
                     it.run()
                 }
             }
+            initialize()
+        }
+    }
+
+    @Bean
+    fun threadPoolTaskScheduler(): ThreadPoolTaskScheduler {
+        return ThreadPoolTaskScheduler().apply {
+            setThreadFactory(
+                ThreadFactoryBuilder()
+                    .setNameFormat("ritsu-cron-job-thread-pool-%d")
+                    .build()
+            )
+            poolSize = this@AsyncConfig.maxPoolSize
+            setWaitForTasksToCompleteOnShutdown(true)
+            setAwaitTerminationSeconds(this@AsyncConfig.awaitTerminationMillis)
+            setRejectedExecutionHandler(ThreadPoolExecutor.CallerRunsPolicy())
             initialize()
         }
     }
