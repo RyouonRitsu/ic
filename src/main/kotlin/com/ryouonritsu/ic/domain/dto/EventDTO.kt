@@ -10,8 +10,8 @@ import java.time.LocalDateTime
 data class EventDTO(
     @Schema(description = "事件ID", example = "1", required = true)
     var id: String = "0",
-    @Schema(description = "订阅标签", example = "tag", required = true)
-    var tag: String,
+    @Schema(description = "用户ID", required = true)
+    var userId: String,
     @Schema(description = "事件名", example = "name", required = true)
     var name: String = "",
     @Schema(description = "事件内容", example = "message", required = true)

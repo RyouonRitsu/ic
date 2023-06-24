@@ -25,7 +25,9 @@ class TokenInterceptor(
     private val redisUtils: RedisUtils,
     private val userRepository: UserRepository
 ) : HandlerInterceptor {
-    private val log: Logger = LoggerFactory.getLogger(TokenInterceptor::class.java)
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(TokenInterceptor::class.java)
+    }
 
     override fun preHandle(
         request: HttpServletRequest,

@@ -9,5 +9,5 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface EventRepository : JpaRepositoryImplementation<Event, Long> {
-    fun findByTagAndStatus(tag: String, status: Boolean): List<Event>
+    fun countByUserIdAndStatus(userId: Long, status: Boolean = true): Long
 }

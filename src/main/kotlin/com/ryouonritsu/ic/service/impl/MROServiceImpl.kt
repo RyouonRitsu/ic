@@ -31,7 +31,6 @@ class MROServiceImpl(
     private val mroRepository: MRORepository,
     private val userRepository: UserRepository,
 ) : MROService {
-
     companion object {
         private val log = LoggerFactory.getLogger(UserServiceImpl::class.java)
     }

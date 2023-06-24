@@ -34,7 +34,9 @@ class PaymentInfoServiceImpl(
     private val rentalInfoRepository: RentalInfoRepository,
     private val transactionTemplate: TransactionTemplate
 ) : PaymentInfoService {
-    private val log = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val log = LoggerFactory.getLogger(PaymentInfoServiceImpl::class.java)
+    }
 
     override fun create(request: AddPaymentRequest): Response<PaymentInfoDTO> {
         val user = userRepository.findByIdAndStatus(request.userId!!)

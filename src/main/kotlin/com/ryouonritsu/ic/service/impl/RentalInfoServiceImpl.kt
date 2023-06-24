@@ -30,7 +30,9 @@ class RentalInfoServiceImpl(
     private val roomRepository: RoomRepository,
     private val transactionTemplate: TransactionTemplate
 ) : RentalInfoService {
-    private val log = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val log = LoggerFactory.getLogger(RentalInfoServiceImpl::class.java)
+    }
 
     override fun list(
         ids: List<Long>?,

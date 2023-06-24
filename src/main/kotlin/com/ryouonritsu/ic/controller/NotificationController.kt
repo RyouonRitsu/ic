@@ -1,17 +1,18 @@
 package com.ryouonritsu.ic.controller
 
+import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.annotation.ServiceLog
+import com.ryouonritsu.ic.domain.protocol.request.BatchPublishRequest
 import com.ryouonritsu.ic.domain.protocol.request.PublishRequest
-import com.ryouonritsu.ic.domain.protocol.request.SubscribeRequest
-import com.ryouonritsu.ic.domain.protocol.request.UnsubscribeRequest
 import com.ryouonritsu.ic.service.NotificationService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
-import javax.validation.constraints.Email
-import javax.validation.constraints.NotBlank
+import javax.validation.constraints.Min
+import javax.validation.constraints.NotNull
 
 /**
  * @author ryouonritsu
@@ -32,33 +33,43 @@ class NotificationController(
     )
     fun publish(@Valid @RequestBody request: PublishRequest) = notificationService.publish(request)
 
-    @ServiceLog(description = "订阅通知")
-    @PostMapping("/subscribe")
+    @ServiceLog(description = "批量发布通知")
+    @PostMapping("/batchPublish")
     @Tag(name = "通知服务接口")
-    @Operation(
-        summary = "订阅通知",
-        description = "订阅通知, 会将订阅者的邮箱加入到该通知的订阅者列表中, 当前如有pending状态的该通知, 会尝试立即发送通知到该订阅者"
-    )
-    fun subscribe(@Valid @RequestBody request: SubscribeRequest) =
-        notificationService.subscribe(request)
+    @Operation(summary = "批量发布通知", description = "批量发布通知")
+    fun batchPublish(@Valid @RequestBody request: BatchPublishRequest) =
+        notificationService.batchPublish(request)
 
-    @ServiceLog(description = "取消订阅通知")
-    @PostMapping("/unsubscribe")
+    @ServiceLog(description = "查询已登陆用户的通知")
+    @AuthCheck
+    @GetMapping("/list")
     @Tag(name = "通知服务接口")
     @Operation(
-        summary = "取消订阅通知",
-        description = "取消订阅通知, 会将订阅者的邮箱从该通知的订阅者列表中移除"
+        summary = "查询已登陆用户的通知",
+        description = "查询过后的通知会被标记为已读"
     )
-    fun unsubscribe(@Valid @RequestBody request: UnsubscribeRequest) =
-        notificationService.unsubscribe(request)
+    fun list(
+        @RequestParam(
+            "keyword",
+            required = false
+        ) @Parameter(description = "关键词") keyword: String?,
+        @RequestParam("page") @Parameter(
+            description = "页码, 从1开始",
+            required = true
+        ) @Valid @NotNull @Min(1) page: Int?,
+        @RequestParam("limit") @Parameter(
+            description = "每页数量, 大于0",
+            required = true
+        ) @Valid @NotNull @Min(1) limit: Int?
+    ) = notificationService.list(keyword, page!!, limit!!)
 
-    @ServiceLog(description = "发送验证码")
-    @GetMapping("/sendVerificationCode")
+    @ServiceLog(description = "是否有未读通知")
+    @AuthCheck
+    @GetMapping("/hasUnreadNotifications")
     @Tag(name = "通知服务接口")
     @Operation(
-        summary = "发送验证码",
-        description = "发送验证码, 会向指定邮箱发送验证码, 该验证码用于取消订阅通知时的身份验证"
+        summary = "是否有未读通知",
+        description = "是否有未读通知"
     )
-    fun sendVerificationCode(@Valid @RequestParam @NotBlank @Email email: String = "") =
-        notificationService.sendVerificationCode(email)
+    fun hasUnreadNotifications() = notificationService.hasUnreadNotifications()
 }

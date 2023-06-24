@@ -1,6 +1,8 @@
 package com.ryouonritsu.ic.entity
 
+import com.ryouonritsu.ic.common.constants.ICConstant
 import com.ryouonritsu.ic.domain.dto.EventDTO
+import com.ryouonritsu.ic.domain.protocol.request.PublishRequest
 import java.time.LocalDateTime
 import javax.persistence.*
 
@@ -13,8 +15,8 @@ class Event(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(columnDefinition = "BIGINT COMMENT '事件ID'", nullable = false)
     var id: Long = 0,
-    @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '订阅标签'", nullable = false)
-    var tag: String,
+    @Column(name = "user_id", columnDefinition = "BIGINT COMMENT '用户ID'", nullable = false)
+    var userId: Long,
     @Column(columnDefinition = "VARCHAR(255) DEFAULT '' COMMENT '事件名'", nullable = false)
     var name: String,
     @Column(columnDefinition = "MEDIUMTEXT COMMENT '事件内容'")
@@ -39,9 +41,17 @@ class Event(
     )
     var modifyTime: LocalDateTime = LocalDateTime.now(),
 ) {
+    companion object {
+        fun from(request: PublishRequest) = Event(
+            userId = request.userId!!,
+            name = request.name ?: ICConstant.EVENT,
+            message = request.message!!
+        )
+    }
+
     fun toDTO() = EventDTO(
         id = "$id",
-        tag = tag,
+        userId = "$userId",
         name = name,
         message = message,
         createTime = createTime,

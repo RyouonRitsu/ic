@@ -8,7 +8,6 @@ import com.ryouonritsu.ic.service.RentalInfoService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.LoggerFactory
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
@@ -23,8 +22,6 @@ import javax.validation.constraints.NotNull
 class RentalInfoController(
     private val rentalInfoService: RentalInfoService,
 ) {
-    private val log = LoggerFactory.getLogger(this::class.java)
-
     @ServiceLog(description = "查询租赁信息列表")
     @GetMapping("/list")
     @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.CLIENT])

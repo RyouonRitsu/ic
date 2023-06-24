@@ -1,10 +1,9 @@
 package com.ryouonritsu.ic.service
 
 import com.ryouonritsu.ic.domain.dto.EventDTO
-import com.ryouonritsu.ic.domain.dto.SubscriberDTO
+import com.ryouonritsu.ic.domain.protocol.request.BatchPublishRequest
 import com.ryouonritsu.ic.domain.protocol.request.PublishRequest
-import com.ryouonritsu.ic.domain.protocol.request.SubscribeRequest
-import com.ryouonritsu.ic.domain.protocol.request.UnsubscribeRequest
+import com.ryouonritsu.ic.domain.protocol.response.ListResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 
 /**
@@ -12,7 +11,12 @@ import com.ryouonritsu.ic.domain.protocol.response.Response
  */
 interface NotificationService {
     fun publish(request: PublishRequest): Response<EventDTO>
-    fun subscribe(request: SubscribeRequest): Response<SubscriberDTO>
-    fun unsubscribe(request: UnsubscribeRequest): Response<Unit>
-    fun sendVerificationCode(email: String): Response<Unit>
+    fun batchPublish(request: BatchPublishRequest): Response<List<EventDTO>>
+    fun list(
+        keyword: String?,
+        page: Int,
+        limit: Int
+    ): Response<ListResponse<EventDTO>>
+
+    fun hasUnreadNotifications(): Response<Boolean>
 }
