@@ -5,14 +5,17 @@ import com.ryouonritsu.ic.common.annotation.CronJob
 import com.ryouonritsu.ic.common.annotation.ScheduledTask
 import com.ryouonritsu.ic.entity.PaymentInfo
 import com.ryouonritsu.ic.entity.RentalInfo
+import com.ryouonritsu.ic.entity.Room
 import com.ryouonritsu.ic.entity.User
 import com.ryouonritsu.ic.repository.PaymentInfoRepository
 import com.ryouonritsu.ic.repository.RentalInfoRepository
+import com.ryouonritsu.ic.repository.RoomRepository
 import com.ryouonritsu.ic.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDate
+import kotlin.jvm.optionals.getOrNull
 
 /**
  * @author ryouonritsu
@@ -23,6 +26,7 @@ class InvalidateStatus(
     private val rentalInfoRepository: RentalInfoRepository,
     private val userRepository: UserRepository,
     private val paymentInfoRepository: PaymentInfoRepository,
+    private val roomRepository: RoomRepository,
     private val transactionTemplate: TransactionTemplate
 ) : ScheduledTask {
     companion object {
@@ -48,12 +52,16 @@ class InvalidateStatus(
         val invalidRentalInfos = mutableListOf<RentalInfo>()
         val invalidPaymentInfos = mutableListOf<PaymentInfo>()
         val invalidUsers = mutableListOf<User>()
+        val availableRooms = mutableListOf<Room>()
         allRentalInfos.forEach {
             if (!now.isAfter(it.endTime)) return@forEach
 
             invalidRentalInfos += it.apply { status = false }
             val relatedPaymentInfo = paymentInfoRepository.findAllByRentalIdAndStatus(it.id)
             invalidPaymentInfos += relatedPaymentInfo.onEach { info -> info.status = false }
+            roomRepository.findById(it.roomId).getOrNull()?.run {
+                availableRooms += this.apply { status = false }
+            }
             val user = userRepository.findByIdAndStatus(it.userId) ?: return@forEach
             if (user.rentalInfoIds.parseArray<Long>()
                     .all { id -> id !in (allRentalInfos - invalidRentalInfos.toSet()).map { info -> info.id } }
@@ -67,6 +75,10 @@ class InvalidateStatus(
             if (invalidPaymentInfos.isNotEmpty()) {
                 log.info("[InvalidateStatus] invalidating paymentInfo in ${invalidPaymentInfos.map { it.id }}")
                 paymentInfoRepository.saveAll(invalidPaymentInfos)
+            }
+            if (availableRooms.isNotEmpty()) {
+                log.info("[InvalidateStatus] freeing room in ${availableRooms.map { it.id }}")
+                roomRepository.saveAll(availableRooms)
             }
             if (invalidUsers.isNotEmpty()) {
                 log.info("[InvalidateStatus] invalidating user in ${invalidUsers.map { it.id }}")
