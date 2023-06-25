@@ -41,7 +41,7 @@ class NotificationServiceImpl(
 
     override fun batchPublish(request: BatchPublishRequest): Response<List<EventDTO>> {
         val events =
-            notificationManager.batchPublish(request.userIds!!, request.name, request.message!!)
+            notificationManager.batchPublish(request)
         return Response.success(events.map { it.toDTO() })
     }
 

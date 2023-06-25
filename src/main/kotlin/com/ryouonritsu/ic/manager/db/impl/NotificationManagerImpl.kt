@@ -4,6 +4,7 @@ import com.ryouonritsu.ic.common.annotation.ServiceLog
 import com.ryouonritsu.ic.common.constants.ICConstant
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
+import com.ryouonritsu.ic.domain.protocol.request.BatchPublishRequest
 import com.ryouonritsu.ic.domain.protocol.request.PublishRequest
 import com.ryouonritsu.ic.entity.Event
 import com.ryouonritsu.ic.manager.db.NotificationManager
@@ -32,6 +33,10 @@ class NotificationManagerImpl(
 
     @ServiceLog(description = "发布通知")
     override fun publish(request: PublishRequest): Event {
+        userRepository.findByIdAndStatus(
+            request.userId ?: throw ServiceException(ExceptionEnum.BAD_REQUEST)
+        ) ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
+
         var event = Event.from(request)
         transactionTemplate.execute {
             event = eventRepository.save(event)
@@ -43,7 +48,13 @@ class NotificationManagerImpl(
 
     @ServiceLog(description = "批量发布通知")
     override fun batchPublish(requests: List<PublishRequest>): List<Event> {
-        var events = requests.map { Event.from(it) }
+        var events = requests.map {
+            userRepository.findByIdAndStatus(
+                it.userId ?: throw ServiceException(ExceptionEnum.BAD_REQUEST)
+            ) ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
+
+            Event.from(it)
+        }
         transactionTemplate.execute {
             events = eventRepository.saveAll(events)
         }
@@ -53,8 +64,10 @@ class NotificationManagerImpl(
     }
 
     @ServiceLog(description = "批量发布通知")
-    override fun batchPublish(userIds: List<Long>, name: String?, message: String): List<Event> {
-        val requests = userIds.map { PublishRequest(it, name, message) }
+    override fun batchPublish(request: BatchPublishRequest): List<Event> {
+        val requests = request.userIds
+            ?.map { PublishRequest(it, request.name, request.message, request.needSendEmail) }
+            ?: throw ServiceException(ExceptionEnum.BAD_REQUEST)
         return batchPublish(requests)
     }
 
@@ -71,6 +84,8 @@ class NotificationManagerImpl(
             }
 
             requests.forEach {
+                if (!it.needSendEmail) return@forEach
+
                 val f = threadPoolTaskExecutor.submitListenable {
                     val user = users[it.userId]
                         ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
@@ -83,10 +98,10 @@ class NotificationManagerImpl(
                 }
                 f.addCallback(
                     { log.info("[NotificationManagerImpl.asyncSendNotification] send notification success!") },
-                    {
+                    { e ->
                         log.error(
                             "[NotificationManagerImpl.asyncSendNotification] send notification failed!",
-                            it
+                            e
                         )
                     }
                 )

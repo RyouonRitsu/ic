@@ -1,6 +1,8 @@
 package com.ryouonritsu.ic.entity
 
 import com.ryouonritsu.ic.common.constants.ICConstant
+import com.ryouonritsu.ic.common.enums.ExceptionEnum
+import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.domain.dto.EventDTO
 import com.ryouonritsu.ic.domain.protocol.request.PublishRequest
 import java.time.LocalDateTime
@@ -43,9 +45,9 @@ class Event(
 ) {
     companion object {
         fun from(request: PublishRequest) = Event(
-            userId = request.userId!!,
+            userId = request.userId ?: throw ServiceException(ExceptionEnum.BAD_REQUEST),
             name = request.name ?: ICConstant.EVENT,
-            message = request.message!!
+            message = request.message ?: throw ServiceException(ExceptionEnum.BAD_REQUEST)
         )
     }
 

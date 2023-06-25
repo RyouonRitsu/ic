@@ -17,4 +17,6 @@ data class BatchPublishRequest(
     @field:NotBlank
     @Schema(description = "消息", example = "Something wrong", required = true)
     val message: String?,
+    @Schema(description = "是否发送邮件通知", required = true)
+    val needSendEmail: Boolean = true
 )
