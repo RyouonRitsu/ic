@@ -108,7 +108,7 @@ class PaymentInfoServiceImpl(
             val re = mutableMapOf<Int, PaymentStatusDTO>()
 
             fun putDefaultResult() {
-                result["$rentalInfoId"] = re.apply {
+                result["${rentalInfo.roomId}"] = re.apply {
                     yearRange.forEach { this[it] = PaymentStatusDTO(false) }
                 }
             }
@@ -135,7 +135,7 @@ class PaymentInfoServiceImpl(
                     )
                 } else re[i] = PaymentStatusDTO(false)
             }
-            result["$rentalInfoId"] = re
+            result["${rentalInfo.roomId}"] = re
         }
 
         return Response.success(result)
