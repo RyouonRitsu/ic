@@ -201,6 +201,7 @@ class UserServiceImpl(
         )
         return Response.success("注册成功")
     }
+
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun addSingleUser(request: AddSingleUserRequest): Response<Unit> {
         userRepository.save(

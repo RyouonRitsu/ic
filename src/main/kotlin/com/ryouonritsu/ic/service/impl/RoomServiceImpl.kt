@@ -3,7 +3,6 @@ package com.ryouonritsu.ic.service.impl
 import com.ryouonritsu.ic.common.constants.TemplateType
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
-import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RedisUtils.Companion.log
 import com.ryouonritsu.ic.component.ColumnDSL
 import com.ryouonritsu.ic.component.file.ExcelSheetDefinition
@@ -36,7 +35,6 @@ import kotlin.jvm.optionals.getOrElse
  */
 @Service
 class RoomServiceImpl(
-    private val redisUtils: RedisUtils,
     private val roomRepository: RoomRepository,
     private val userRepository: UserRepository,
     private val tableTemplateService: TableTemplateService
@@ -45,7 +43,6 @@ class RoomServiceImpl(
         val room = roomRepository.findById(roomId).getOrElse {
             throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
         }
-//        return Response.success("获取成功", room.toDTO())
         return Response.success("获取成功", RoomDTO.from(room))
     }
 
@@ -103,7 +100,6 @@ class RoomServiceImpl(
             log.error("[RoomServiceImpl.download] 没有用户列表模板")
             throw ServiceException(ExceptionEnum.TEMPLATE_NOT_EXIST)
         }
-//        val data = roomRepository.findAll().map { it.toDTO() }
         val data = roomRepository.findAll().map { RoomDTO.from(it) }
         return XSSFWorkbook().process(headers, data)
     }
@@ -117,10 +113,6 @@ class RoomServiceImpl(
         return tableTemplateService.queryExcelSheetDefinitions(TemplateType.ROOM_UPLOAD_TEMPLATE)
     }
 
-    /*override fun findByKeyword(keyword: String): Response<List<RoomDTO>> {
-        TODO("Not yet implemented")
-    }*/
-
     override fun upload(file: MultipartFile): Response<Unit> {
         val excelSheetDefinitions = getExcelSheetDefinitions()
         val rooms = file.read(excelSheetDefinitions, RoomUploadConverter::convert)
@@ -129,16 +121,19 @@ class RoomServiceImpl(
     }
 
     fun RoomDTO.Companion.from(room: Room): RoomDTO {
-        val id = room.userId!!
-        val user = userRepository.findByIdAndStatus(id, true)!!
-        return RoomDTO(
-                id = room.id.toString(),
-                user = user.toDTO(),
-                status = room.status,
-                commence = room.commence,
-                terminate = room.terminate,
-                contract = room.contract.toString(),
-                roomInfo = room.roomInfo
-                )
+        val roomDTO = RoomDTO(
+            id = room.id.toString(),
+            status = room.status,
+            commence = room.commence,
+            terminate = room.terminate,
+            contract = room.contract.toString(),
+            roomInfo = room.roomInfo
+        )
+        val userId = room.userId ?: return roomDTO
+        val user = userRepository.findByIdAndStatus(userId) ?: run {
+            log.error("[RoomServiceImpl.from] cannot find user by [$userId]")
+            return roomDTO
+        }
+        return roomDTO.apply { this.user = user.toDTO() }
     }
 }

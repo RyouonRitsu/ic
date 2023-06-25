@@ -52,9 +52,6 @@ class Event(
     fun toDTO() = EventDTO(
         id = "$id",
         userId = "$userId",
-        name = name,
-        message = message,
-        createTime = createTime,
-        modifyTime = modifyTime,
+        name, message, status, createTime, modifyTime
     )
 }

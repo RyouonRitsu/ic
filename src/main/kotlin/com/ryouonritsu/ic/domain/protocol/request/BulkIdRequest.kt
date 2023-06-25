@@ -6,9 +6,9 @@ import javax.validation.constraints.NotEmpty
 /**
  * @author ryouonritsu
  */
-@Schema(description = "批量下单请求")
-data class BulkOrderRequest(
+@Schema(description = "批量ID请求")
+data class BulkIdRequest(
     @field:NotEmpty
-    @Schema(description = "记录ID集合", required = true)
-    val recordIds: List<Long>?
+    @Schema(description = "ID集合", required = true)
+    val ids: List<Long>?
 )

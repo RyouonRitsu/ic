@@ -45,6 +45,4 @@ interface UserRepository : JpaRepositoryImplementation<User, Long> {
 
     @Query("SELECT u FROM User u WHERE u.status = true ORDER BY u.createTime")
     fun list(pageable: Pageable = PageRequest.of(0, 10)): Page<User>
-
-
 }

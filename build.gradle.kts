@@ -33,7 +33,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web-services")
     implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-//    implementation("org.springframework.experimental:spring-aot:0.12.2")
+    implementation("org.springframework.experimental:spring-aot:0.12.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")

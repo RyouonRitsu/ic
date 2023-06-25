@@ -11,7 +11,7 @@ data class RoomDTO(
     @Schema(description = "房间ID", example = "1", required = true)
     var id: String = "0",
     @Schema(description = "用户ID", example = "1", required = false)
-    var user: UserDTO?,
+    var user: UserDTO? = null,
     @Schema(description = "租赁状态", example = "1", required = true)
     var status: Boolean = false,
     @Schema(description = "租赁开始日期", example = "1900-01-01", required = false)

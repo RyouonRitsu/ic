@@ -4,9 +4,11 @@ import com.ryouonritsu.ic.common.constants.ICConstant
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.dto.EventDTO
 import com.ryouonritsu.ic.domain.protocol.request.BatchPublishRequest
+import com.ryouonritsu.ic.domain.protocol.request.BulkIdRequest
 import com.ryouonritsu.ic.domain.protocol.request.PublishRequest
 import com.ryouonritsu.ic.domain.protocol.response.ListResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
+import com.ryouonritsu.ic.domain.protocol.response.UnreadNotificationResponse
 import com.ryouonritsu.ic.entity.Event
 import com.ryouonritsu.ic.manager.db.NotificationManager
 import com.ryouonritsu.ic.repository.EventRepository
@@ -43,6 +45,15 @@ class NotificationServiceImpl(
         return Response.success(events.map { it.toDTO() })
     }
 
+    override fun batchRead(request: BulkIdRequest): Response<Unit> {
+        val events = eventRepository.findAllById(request.ids!!)
+        if (events.isEmpty()) return Response.success()
+
+        events.forEach { it.status = false }
+        transactionTemplate.execute { eventRepository.saveAll(events) }
+        return Response.success()
+    }
+
     override fun list(keyword: String?, page: Int, limit: Int): Response<ListResponse<EventDTO>> {
         val specification = Specification<Event> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
@@ -58,15 +69,13 @@ class NotificationServiceImpl(
         val result =
             eventRepository.findAll(specification, PageRequest.of(page - ICConstant.INT_1, limit))
         val total = result.totalElements
-        val events = result.content
-        events.forEach { it.status = false }
-        transactionTemplate.execute { eventRepository.saveAll(events) }
-        return Response.success(ListResponse(events.map { it.toDTO() }, total))
+        val events = result.content.map { it.toDTO() }
+        return Response.success(ListResponse(events, total))
     }
 
-    override fun hasUnreadNotifications(): Response<Boolean> {
+    override fun hasUnreadNotifications(): Response<UnreadNotificationResponse> {
         val cnt = eventRepository.countByUserIdAndStatus(RequestContext.user!!.id)
-        return if (cnt > ICConstant.INT_0) Response.success(true)
-        else Response.success(false)
+        return if (cnt > ICConstant.INT_0) Response.success(UnreadNotificationResponse(true, cnt))
+        else Response.success(UnreadNotificationResponse(false, ICConstant.LONG_0))
     }
 }

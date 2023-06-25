@@ -16,6 +16,8 @@ data class EventDTO(
     var name: String = "",
     @Schema(description = "事件内容", example = "message", required = true)
     var message: String = "",
+    @Schema(description = "是否未读", required = true)
+    var status: Boolean,
     @Schema(description = "创建时间", required = true)
     var createTime: LocalDateTime = LocalDateTime.now(),
     @Schema(description = "修改时间", required = true)
