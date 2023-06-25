@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile
  * @author ryouonritsu
  */
 interface UserService {
+    fun sendSmsVerificationCode(phone: String): Response<Unit>
     fun sendRegistrationVerificationCode(email: String?, modify: Boolean): Response<Unit>
     fun generateInvitationCode(): Response<String>
     fun register(request: RegisterRequest): Response<Unit>

@@ -85,7 +85,7 @@ class RentalInfoServiceImpl(
         room.status = true
         transactionTemplate.execute {
             rentalInfo = rentalInfoRepository.save(rentalInfo)
-            log.info("[RentalInfoServiceImpl.createRentalInfo] save success, id = ${rentalInfo.id}")
+            log.info("[RentalInfoServiceImpl.createRentalInfo] save successful, id = ${rentalInfo.id}")
             user.rentalInfoIds = user.rentalInfoIds.parseArray<Long>()
                 .apply { this += rentalInfo.id }
                 .toJSONString()

@@ -97,7 +97,7 @@ class NotificationManagerImpl(
                     if (!result) throw ServiceException(ExceptionEnum.REQUEST_TIMEOUT)
                 }
                 f.addCallback(
-                    { log.info("[NotificationManagerImpl.asyncSendNotification] send notification success!") },
+                    { log.info("[NotificationManagerImpl.asyncSendNotification] send notification successful!") },
                     { e ->
                         log.error(
                             "[NotificationManagerImpl.asyncSendNotification] send notification failed!",

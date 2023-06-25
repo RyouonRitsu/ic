@@ -40,6 +40,13 @@ class UserController(
         private val log = LoggerFactory.getLogger(UserController::class.java)
     }
 
+    @ServiceLog(description = "发送手机验证码")
+    @PostMapping("/sendSmsVerificationCode")
+    @Tag(name = "用户接口")
+    @Operation(summary = "发送手机验证码", description = "发送手机验证码")
+    fun sendSmsVerificationCode(@RequestBody @Valid request: SendSmsRequest) =
+        userService.sendSmsVerificationCode(request.phone!!)
+
     @ServiceLog(description = "发送注册验证码")
     @PostMapping("/sendRegistrationVerificationCode")
     @Tag(name = "用户接口")

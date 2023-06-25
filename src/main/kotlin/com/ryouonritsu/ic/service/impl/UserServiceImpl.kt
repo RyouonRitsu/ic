@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.service.impl
 
+import com.ryouonritsu.ic.common.constants.ICConstant
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_1
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_20000
@@ -24,6 +25,7 @@ import com.ryouonritsu.ic.entity.InvitationCode
 import com.ryouonritsu.ic.entity.User
 import com.ryouonritsu.ic.entity.UserFile
 import com.ryouonritsu.ic.manager.db.UserManager
+import com.ryouonritsu.ic.manager.rpc.SmsService
 import com.ryouonritsu.ic.repository.InvitationCodeRepository
 import com.ryouonritsu.ic.repository.UserFileRepository
 import com.ryouonritsu.ic.repository.UserRepository
@@ -56,6 +58,7 @@ import kotlin.io.path.Path
 class UserServiceImpl(
     private val redisUtils: RedisUtils,
     private val userManager: UserManager,
+    private val smsService: SmsService,
     private val userRepository: UserRepository,
     private val userFileRepository: UserFileRepository,
     private val invitationCodeRepository: InvitationCodeRepository,
@@ -136,8 +139,17 @@ class UserServiceImpl(
         else false
         return if (success) {
             redisUtils.set(email, verificationCode, 5, TimeUnit.MINUTES)
-            Response.success("验证码已发送")
-        } else Response.failure("验证码发送失败")
+            Response.success(ICConstant.VERIFICATION_CODE_SEND_SUCCESSFUL)
+        } else Response.failure(ICConstant.VERIFICATION_CODE_SEND_FAILED)
+    }
+
+    override fun sendSmsVerificationCode(phone: String): Response<Unit> {
+        val verificationCode = (1..6).joinToString("") { "${(0..9).random()}" }
+        val success = smsService.sendVerifyCodeSms(phone, verificationCode)
+        return if (success) {
+            redisUtils.set(phone, verificationCode, 5, TimeUnit.MINUTES)
+            Response.success(ICConstant.VERIFICATION_CODE_SEND_SUCCESSFUL)
+        } else Response.failure(ICConstant.VERIFICATION_CODE_SEND_FAILED)
     }
 
     override fun sendRegistrationVerificationCode(

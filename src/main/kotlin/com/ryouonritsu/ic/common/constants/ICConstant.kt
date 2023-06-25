@@ -129,4 +129,20 @@ object ICConstant {
      * 房间ID
      */
     const val ROOM_ID = "roomId"
+
+    /**
+     * Region ID
+     */
+    const val SMS_REGION = "cn-beijing"
+
+    /**
+     * EndpointOverride
+     */
+    const val SMS_API = "dysmsapi.aliyuncs.com"
+
+    const val OK = "OK"
+
+    const val VERIFICATION_CODE_SEND_SUCCESSFUL = "验证码已发送"
+
+    const val VERIFICATION_CODE_SEND_FAILED = "验证码发送失败"
 }

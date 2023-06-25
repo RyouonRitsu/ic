@@ -52,6 +52,8 @@ dependencies {
     implementation("org.apache.poi:poi-ooxml:5.2.3")
     // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2
     implementation("org.apache.commons:commons-pool2:2.11.1")
+    // https://mvnrepository.com/artifact/com.aliyun/alibabacloud-dysmsapi20170525
+    implementation("com.aliyun:alibabacloud-dysmsapi20170525:2.0.23")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("com.mysql:mysql-connector-j")
     annotationProcessor("org.projectlombok:lombok")
