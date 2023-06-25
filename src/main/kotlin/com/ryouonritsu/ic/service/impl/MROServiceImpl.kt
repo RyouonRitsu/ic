@@ -18,6 +18,8 @@ import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
+import java.time.Month
 import javax.persistence.criteria.Predicate
 
 /**
@@ -242,6 +244,38 @@ class MROServiceImpl(
             val res = userList.toSet().filter { !workers.contains(it.id.toLong()) } + workerList
             val total = res.size
             Response.success(ListWorkerResponse(total, res))
+        }.onFailure {
+            if (it is NoSuchElementException) {
+                redisUtils - "${RequestContext.user!!.id}"
+                return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+            }
+            log.error(it.stackTraceToString())
+        }.getOrDefault(Response.failure("查询失败, 发生意外错误"))
+    }
+
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun statistics(year: Int): Response<Map<Month, Map<String, Int>>> {
+        return runCatching {
+            userRepository.findById(RequestContext.user!!.id).get()
+            val specification = Specification<MRO> { root, query, cb ->
+                val predicates = mutableListOf<Predicate>()
+                predicates += cb.greaterThanOrEqualTo(
+                    root.get("createTime"),
+                    LocalDateTime.of(year, 1, 1, 0, 0, 0)
+                )
+                predicates += cb.lessThanOrEqualTo(
+                    root.get("createTime"),
+                    LocalDateTime.of(year, 12, 31, 23, 59, 59)
+                )
+                predicates += cb.equal(root.get<Boolean>("status"), true)
+                query.where(*predicates.toTypedArray())
+                    .orderBy(cb.asc(root.get<Int>("mroStatus")))
+                    .restriction
+            }
+            val mroList = mroRepository.findAll(specification)
+                .groupBy { it.createTime.month }
+                .mapValues { it.value.groupBy { it.label }.mapValues { it.value.size } }
+            Response.success<Map<Month, Map<String, Int>>>("查询成功", mroList)
         }.onFailure {
             if (it is NoSuchElementException) {
                 redisUtils - "${RequestContext.user!!.id}"

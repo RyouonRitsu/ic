@@ -6,6 +6,7 @@ import com.ryouonritsu.ic.domain.protocol.request.WorkerModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
 import com.ryouonritsu.ic.domain.protocol.response.ListWorkerResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
+import java.time.Month
 
 /**
  * @Author Kude
@@ -32,4 +33,6 @@ interface MROService {
     fun selectWorker(
         actualDate: String?, actualTime: String?, label: String?
     ): Response<ListWorkerResponse>
+
+    fun statistics(year: Int): Response<Map<Month, Map<String, Int>>>
 }

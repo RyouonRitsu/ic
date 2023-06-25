@@ -125,4 +125,18 @@ class MROController(
         @RequestParam(required = false)
         @Parameter(description = "具体维修类型") label: String?
     ) = mroService.selectWorker(actualDate, actualTime, label)
+
+    @ServiceLog(description = "维修工单统计")
+    @GetMapping("/statistics")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
+    @Tag(name = "维修工单接口")
+    @Operation(
+        summary = "维修工单统计",
+        description = "统计每月和每年每种类型维修工作"
+    )
+    fun statistics(
+        @RequestParam(required = true)
+        @Parameter(description = "统计年份")
+        @Valid @NotNull year: Int,
+    ) = mroService.statistics(year)
 }
