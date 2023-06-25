@@ -64,9 +64,15 @@ class MROServiceImpl(
 
     fun getMsg(user: User, mro: MRO): String {
         return "{\"mroId\":\"${mro.id}\"," +
-                "{\"problem\":\"${mro.problem}\"," +
+                "\"problem\":\"${mro.problem}\"," +
                 "\"userAvatar\":\"${user.avatar}\"," +
                 "\"username\":\"${user.username}\"}"
+    }
+
+    fun getUserMsg(mro: MRO): String {
+        return "{\"mroId\":\"${mro.id}\"," +
+                "\"problem\":\"${mro.problem}\"," +
+                "\"status\":\"${mro.status}\"}"
     }
 
     override fun list(
@@ -154,11 +160,8 @@ class MROServiceImpl(
             )
             mro = mroRepository.save(mro)
             val msg = getMsg(user, mro)
-            val adminIdList =
-                userRepository.findAllByUserTypeAndStatus(User.UserType.ADMIN.code).map { it.id }
-            notificationManager.batchPublish(
-                BatchPublishRequest(adminIdList, "MRO_admin", msg, false)
-            )
+            val adminIdList = userRepository.findAllByUserTypeAndStatus(User.UserType.ADMIN.code).map { it.id }
+            notificationManager.batchPublish(BatchPublishRequest(adminIdList, "MRO_admin", msg, false))
             Response.success<Unit>("创建成功")
         }.onFailure {
             if (it is NoSuchElementException) {
@@ -183,17 +186,11 @@ class MROServiceImpl(
                 mro.actualTime = request.actualTime!!
             }
             mro.mroStatus = 1
-            val customMsg = "{\"mroId\":\"${mro.id}\"," +
-                    "{\"problem\":\"${mro.problem}\"," +
-                    "\"status\":\"${mro.status}\"}"
-            notificationManager.publish(
-                PublishRequest(mro.customId, "MRO_feedback", customMsg, false)
-            )
+            val customMsg = getUserMsg(mro)
+            notificationManager.publish(PublishRequest(mro.customId, "MRO_feedback", customMsg, false))
             val user = userRepository.findById(mro.customId).get()
             val workerMsg = getMsg(user, mro)
-            notificationManager.publish(
-                PublishRequest(mro.workerId, "MRO_notice", workerMsg, false)
-            )
+            notificationManager.publish(PublishRequest(mro.workerId, "MRO_notice", workerMsg, false))
             mroRepository.save(mro)
             Response.success<Unit>("修改成功")
         }.onFailure {
@@ -215,9 +212,7 @@ class MROServiceImpl(
             mro.maintenanceTime = request.maintenanceTime!!
             mro.mroStatus = 2
             mroRepository.save(mro)
-            val msg = "{\"mroId\":\"${mro.id}\"," +
-                    "{\"problem\":\"${mro.problem}\"," +
-                    "\"status\":\"${mro.status}\"}"
+            val msg = getUserMsg(mro)
             notificationManager.publish(PublishRequest(mro.customId, "MRO_finish", msg, false))
             Response.success<Unit>("修改成功")
         }.onFailure {
