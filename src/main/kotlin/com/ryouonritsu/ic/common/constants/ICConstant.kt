@@ -62,6 +62,11 @@ object ICConstant {
     const val LONG_0 = 0L
 
     /**
+     * Long型1
+     */
+    const val LONG_1 = 1L
+
+    /**
      * 空字符串
      */
     const val EMPTY_STR = ""
@@ -145,4 +150,10 @@ object ICConstant {
     const val VERIFICATION_CODE_SEND_SUCCESSFUL = "验证码已发送"
 
     const val VERIFICATION_CODE_SEND_FAILED = "验证码发送失败"
+
+    const val PAYMENT_REMINDER_NAME = "[系统通知] 缴费提醒"
+
+    const val PAYMENT_REMINDER_MESSAGE =
+        "亲爱的用户，您今年的大厦房间租赁费用尚未缴纳，请您于 %s 前向大厦管理员缴纳费用！" +
+                "如到期仍未缴费，则您的行为可能会被视为违约。请您在规定时间内缴纳费用，感谢您的配合！"
 }

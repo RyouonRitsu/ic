@@ -10,12 +10,12 @@ import com.ryouonritsu.ic.manager.rpc.SmsService
 import darabonba.core.client.ClientOverrideConfiguration
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 
 /**
  * @author ryouonritsu
  */
-@Component
+@Service
 class SmsServiceImpl(
     @Value("\${alibaba.cloud.accessKey.id}")
     private val accessKeyId: String,

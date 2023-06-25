@@ -92,16 +92,23 @@ class PaymentInfoServiceImpl(
         else userRepository.findByIdAndStatus(userId)
             ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
         val rentalInfoIds = user.rentalInfoIds.parseArray<Long>()
-        val paymentInfoIds = user.paymentInfoIds.parseArray<Long>()
-        if (rentalInfoIds.isNullOrEmpty())
+        val rentalInfoMap = rentalInfoRepository.findAllByIdsAndStatus(rentalInfoIds)
+            .associateBy { it.id }
+        if (rentalInfoIds.isNullOrEmpty() || rentalInfoMap.isEmpty()) {
+            log.warn("[PaymentServiceImpl.queryStatusByUserId] no rentalInfo found, userId = ${user.id}")
             return Response.success(mapOf())
+        }
+
+        val paymentInfoIds = user.paymentInfoIds.parseArray<Long>()
+        val paymentInfoList = paymentInfoRepository.findAllByIdsAndStatus(paymentInfoIds)
 
         val result = mutableMapOf<String, Map<Int, PaymentStatusDTO>>()
         rentalInfoIds.forEach { rentalInfoId ->
-            val rentalInfo = rentalInfoRepository.findById(rentalInfoId).getOrElse {
+            val rentalInfo = rentalInfoMap[rentalInfoId] ?: run {
                 log.error("[PaymentServiceImpl.queryStatusByUserId] can not find rentalInfo by id = $rentalInfoId")
                 return@forEach
             }
+
             val yearRange = rentalInfo.startTime.year..rentalInfo.endTime.year
             log.info("[PaymentServiceImpl.queryStatusByUserId] for $rentalInfoId, yearRange is $yearRange")
 
@@ -113,13 +120,8 @@ class PaymentInfoServiceImpl(
                 }
             }
 
-            if (paymentInfoIds.isNullOrEmpty()) {
-                putDefaultResult()
-                return@forEach
-            }
-
-            val paymentInfoList = paymentInfoRepository.findAllById(paymentInfoIds)
-            if (paymentInfoList.isEmpty()) {
+            if (paymentInfoIds.isNullOrEmpty() || paymentInfoList.isEmpty()) {
+                log.warn("[PaymentServiceImpl.queryStatusByUserId] no paymentInfo found, userId = ${user.id}")
                 putDefaultResult()
                 return@forEach
             }
