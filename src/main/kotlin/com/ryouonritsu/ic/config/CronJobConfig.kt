@@ -38,7 +38,7 @@ class CronJobConfig(
                 log.info("[CronJobConfig.configureTasks] init CronJob: ${this.name}")
                 (v as? ScheduledTask)?.run {
                     taskRegistrar.addTriggerTask(this) {
-                        cronJobConfigRepository.findAllByNameAndStatus(this@annotation.name)
+                        cronJobConfigRepository.findAllByNameAndStatusOrderByCreateTimeDesc(this@annotation.name)
                             .firstOrNull()?.run {
                                 log.info("[CronJobConfig.configureTasks] set cron task context, name = ${this.name}, expr = ${this.expression}")
                                 CronTrigger(this.expression).nextExecutionTime(it)

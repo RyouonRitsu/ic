@@ -9,5 +9,7 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface CronJobConfigRepository : JpaRepositoryImplementation<CronJobConfig, Long> {
-    fun findAllByNameAndStatus(name: String, status: Boolean = true): List<CronJobConfig>
+    fun findAllByNameAndStatusOrderByCreateTimeDesc(
+        name: String, status: Boolean = true
+    ): List<CronJobConfig>
 }

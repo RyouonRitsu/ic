@@ -47,10 +47,11 @@ class PaymentReminder(
         val allRentalInfos = rentalInfoRepository.findAllByStatus()
         val now = LocalDate.now()
         allRentalInfos.forEach { rentalInfo ->
-            val checkDate =
-                LocalDate.of(now.year, rentalInfo.endTime.month, rentalInfo.endTime.dayOfMonth)
-                    .minusMonths(ICConstant.LONG_1)
-            log.info("[PaymentReminder] checkData is $checkDate")
+            var expireDateOfThisYear = rentalInfo.endTime
+            while (expireDateOfThisYear.year > now.year)
+                expireDateOfThisYear = expireDateOfThisYear.minusYears(ICConstant.LONG_1)
+            val checkDate = expireDateOfThisYear.minusMonths(ICConstant.LONG_1)
+            log.info("[PaymentReminder] expireDateOfThisYear is $expireDateOfThisYear, checkData is $checkDate")
             if (now != checkDate) return@forEach
 
             val yearsOfPaymentInfos =
@@ -66,13 +67,18 @@ class PaymentReminder(
                         name = ICConstant.PAYMENT_REMINDER_NAME,
                         message = String.format(
                             ICConstant.PAYMENT_REMINDER_MESSAGE,
-                            rentalInfo.endTime.format(DateTimeFormatter.ISO_DATE)
+                            expireDateOfThisYear.format(DateTimeFormatter.ISO_DATE)
                         )
                     )
                 )
             }
             f.addCallback(
-                { log.info("[PaymentReminder] reminder to [${rentalInfo.userId}] successful, event = ${it?.toJSONString()}") },
+                {
+                    it?.run {
+                        log.info("[PaymentReminder] reminder to [${rentalInfo.userId}] successful, event = ${this.toJSONString()}")
+                    }
+                        ?: log.error("[PaymentReminder] unexpected reminder to [${rentalInfo.userId}], missing event!")
+                },
                 { log.error("[PaymentReminder] reminder to [${rentalInfo.userId}] failed!", it) }
             )
         }
