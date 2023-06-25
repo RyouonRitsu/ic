@@ -3,6 +3,7 @@ package com.ryouonritsu.ic.controller
 import com.ryouonritsu.ic.common.annotation.AuthCheck
 import com.ryouonritsu.ic.common.annotation.ServiceLog
 import com.ryouonritsu.ic.domain.protocol.request.BatchPublishRequest
+import com.ryouonritsu.ic.domain.protocol.request.BulkIdRequest
 import com.ryouonritsu.ic.domain.protocol.request.PublishRequest
 import com.ryouonritsu.ic.service.NotificationService
 import io.swagger.v3.oas.annotations.Operation
@@ -39,6 +40,13 @@ class NotificationController(
     @Operation(summary = "批量发布通知", description = "批量发布通知")
     fun batchPublish(@Valid @RequestBody request: BatchPublishRequest) =
         notificationService.batchPublish(request)
+
+    @ServiceLog(description = "批量已读通知")
+    @PostMapping("/batchRead")
+    @Tag(name = "通知服务接口")
+    @Operation(summary = "批量已读通知", description = "批量已读通知")
+    fun batchRead(@Valid @RequestBody request: BulkIdRequest) =
+        notificationService.batchRead(request)
 
     @ServiceLog(description = "查询已登陆用户的通知")
     @AuthCheck
