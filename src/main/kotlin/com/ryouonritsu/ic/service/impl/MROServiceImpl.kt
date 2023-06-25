@@ -136,7 +136,7 @@ class MROServiceImpl(
                 .filter { userIdList.contains(it.key) }
                 .minBy { it.value.size }
                 .key
-            val mro = MRO(
+            var mro = MRO(
                 customId = user.id,
                 problem = request.problem!!,
                 expectTime = request.expectTime ?: "",
@@ -146,12 +146,12 @@ class MROServiceImpl(
                 label = request.label!!,
                 roomId = request.roomId!!,
             )
+            mro = mroRepository.save(mro)
             val adminIdList = userRepository.findAllByUserTypeAndStatus(User.UserType.ADMIN.code).map { it.id }
             val msg = "{\"mroId\":\"${mro.id}\"," +
                     "\"userAvatar\":\"${user.avatar}\"," +
                     "\"username\":\"${user.username}\"}"
             notificationManager.batchPublish(adminIdList, "MRO_admin", msg)
-            mroRepository.save(mro)
             Response.success<Unit>("创建成功")
         }.onFailure {
             if (it is NoSuchElementException) {
