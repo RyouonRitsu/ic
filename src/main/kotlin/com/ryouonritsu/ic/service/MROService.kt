@@ -20,6 +20,7 @@ interface MROService {
         roomId: String?,
         mroStatus: Int?,
         keyword: String?,
+        label: String?,
         page: Int,
         limit: Int
     ): Response<ListMROResponse>

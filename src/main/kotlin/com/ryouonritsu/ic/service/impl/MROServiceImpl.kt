@@ -82,6 +82,7 @@ class MROServiceImpl(
         roomId: String?,
         mroStatus: Int?,
         keyword: String?,
+        label: String?,
         page: Int,
         limit: Int
     ): Response<ListMROResponse> {
@@ -108,6 +109,9 @@ class MROServiceImpl(
                         cb.like(root.get("problem"), "%$keyword%"),
                         cb.like(root.get("resolvent"), "%$keyword%")
                     )
+                }
+                if (!label.isNullOrBlank()) {
+                    predicates += cb.equal(root.get<String>("label"), label)
                 }
                 predicates += cb.equal(root.get<Boolean>("status"), true)
                 query.where(*predicates.toTypedArray())

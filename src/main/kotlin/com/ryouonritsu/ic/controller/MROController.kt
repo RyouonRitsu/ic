@@ -53,7 +53,10 @@ class MROController(
         ) @Parameter(description = "房间id，精确") roomId: String?,
         @RequestParam(
             required = false
-        ) @Parameter(description = "订单状态，精确") mroStatus: Int?,
+        ) @Parameter(description = "维修工单状态，精确") mroStatus: Int?,
+        @RequestParam(
+            required = false
+        ) @Parameter(description = "维修工单类型，精确") label: String?,
         @RequestParam(
             required = false
         ) @Parameter(description = "关键词，模糊") keyword: String?,
@@ -72,6 +75,7 @@ class MROController(
         roomId,
         mroStatus,
         keyword,
+        label,
         page!!,
         limit!!
     )
