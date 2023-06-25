@@ -4,12 +4,14 @@ import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.protocol.request.AdminModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.request.CreateMRORequest
+import com.ryouonritsu.ic.domain.protocol.request.PublishRequest
 import com.ryouonritsu.ic.domain.protocol.request.WorkerModifyMRORequest
 import com.ryouonritsu.ic.domain.protocol.response.ListMROResponse
 import com.ryouonritsu.ic.domain.protocol.response.ListWorkerResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.MRO
 import com.ryouonritsu.ic.entity.User
+import com.ryouonritsu.ic.manager.db.NotificationManager
 import com.ryouonritsu.ic.repository.MRORepository
 import com.ryouonritsu.ic.repository.UserRepository
 import com.ryouonritsu.ic.service.MROService
@@ -30,6 +32,7 @@ class MROServiceImpl(
     private val redisUtils: RedisUtils,
     private val mroRepository: MRORepository,
     private val userRepository: UserRepository,
+    private val notificationManager: NotificationManager
 ) : MROService {
     companion object {
         private val log = LoggerFactory.getLogger(UserServiceImpl::class.java)
@@ -133,18 +136,22 @@ class MROServiceImpl(
                 .filter { userIdList.contains(it.key) }
                 .minBy { it.value.size }
                 .key
-            mroRepository.save(
-                MRO(
-                    customId = user.id,
-                    problem = request.problem!!,
-                    expectTime = request.expectTime ?: "",
-                    actualDate = request.actualDate!!,
-                    actualTime = request.actualTime!!,
-                    workerId = workerId,
-                    label = request.label!!,
-                    roomId = request.roomId!!,
-                )
+            val mro = MRO(
+                customId = user.id,
+                problem = request.problem!!,
+                expectTime = request.expectTime ?: "",
+                actualDate = request.actualDate!!,
+                actualTime = request.actualTime!!,
+                workerId = workerId,
+                label = request.label!!,
+                roomId = request.roomId!!,
             )
+            val adminIdList = userRepository.findAllByUserTypeAndStatus(User.UserType.ADMIN.code).map { it.id }
+            val msg = "{\"mroId\":\"${mro.id}\"," +
+                    "\"userAvatar\":\"${user.avatar}\"," +
+                    "\"username\":\"${user.username}\"}"
+            notificationManager.batchPublish(adminIdList, "MRO_admin", msg)
+            mroRepository.save(mro)
             Response.success<Unit>("创建成功")
         }.onFailure {
             if (it is NoSuchElementException) {
@@ -169,6 +176,7 @@ class MROServiceImpl(
                 mro.actualTime = request.actualTime!!
             }
             mro.mroStatus = 1
+            notificationManager.publish(PublishRequest(mro.customId, "MRO_feedback", "${mro.id}"))
             mroRepository.save(mro)
             Response.success<Unit>("修改成功")
         }.onFailure {
@@ -190,6 +198,7 @@ class MROServiceImpl(
             mro.maintenanceTime = request.maintenanceTime!!
             mro.mroStatus = 2
             mroRepository.save(mro)
+            notificationManager.publish(PublishRequest(mro.customId, "MRO_finish", "${mro.id}"))
             Response.success<Unit>("修改成功")
         }.onFailure {
             if (it is NoSuchElementException) {
@@ -199,7 +208,6 @@ class MROServiceImpl(
             log.error(it.stackTraceToString())
         }.getOrDefault(Response.failure("修改失败, 发生意外错误"))
     }
-
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun selectWorker(
