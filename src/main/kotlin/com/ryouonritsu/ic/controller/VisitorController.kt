@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
@@ -76,7 +77,7 @@ class VisitorController(
     ) = visitorService.statisticsDay(date)
 
     @ServiceLog(description = "客户查看自己的访客申请")
-    @PostMapping("/listVisitorForUser")
+    @GetMapping("/listVisitorForUser")
     @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.CLIENT])
     @Tag(name = "访客接口")
     @Operation(
@@ -90,7 +91,7 @@ class VisitorController(
         ) = visitorService.list(ids, null, page!!, limit!!)
 
     @ServiceLog(description = "管理员查看所有的的访客申请")
-    @PostMapping("/listVisitorForAdmin")
+    @GetMapping("/listVisitorForAdmin")
     @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.CLIENT])
     @Tag(name = "访客接口")
     @Operation(

@@ -142,7 +142,7 @@ class VisitorServiceImpl(
             if (!ids.isNullOrEmpty()) predicates += cb.`in`(root.get<Long>("id")).apply {
                 ids.forEach { this.value(it) }
             }
-            predicates += cb.equal(root.get<Long>("userId"), userId ?: RequestContext.user!!.id)
+            predicates += cb.equal(root.get<Long>("customId"), userId ?: RequestContext.user!!.id)
             predicates += cb.equal(root.get<Boolean>("status"), true)
             query.where(*predicates.toTypedArray())
                 .orderBy(cb.desc(root.get<LocalDateTime>("createTime")))
