@@ -1,9 +1,11 @@
 package com.ryouonritsu.ic.service.impl
 
+import com.alibaba.fastjson2.parseArray
 import com.ryouonritsu.ic.common.constants.ICConstant
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_1
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_20000
+import com.ryouonritsu.ic.common.constants.ICConstant.LONG_1
 import com.ryouonritsu.ic.common.constants.TemplateType
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
@@ -17,6 +19,7 @@ import com.ryouonritsu.ic.component.file.converter.UserUploadConverter
 import com.ryouonritsu.ic.component.getTemplate
 import com.ryouonritsu.ic.component.process
 import com.ryouonritsu.ic.component.read
+import com.ryouonritsu.ic.cron.job.InvalidateStatus
 import com.ryouonritsu.ic.domain.dto.UserDTO
 import com.ryouonritsu.ic.domain.protocol.request.*
 import com.ryouonritsu.ic.domain.protocol.response.ListUserResponse
@@ -27,6 +30,7 @@ import com.ryouonritsu.ic.entity.UserFile
 import com.ryouonritsu.ic.manager.db.UserManager
 import com.ryouonritsu.ic.manager.rpc.SmsService
 import com.ryouonritsu.ic.repository.InvitationCodeRepository
+import com.ryouonritsu.ic.repository.RentalInfoRepository
 import com.ryouonritsu.ic.repository.UserFileRepository
 import com.ryouonritsu.ic.repository.UserRepository
 import com.ryouonritsu.ic.service.TableTemplateService
@@ -38,6 +42,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -60,10 +65,13 @@ class UserServiceImpl(
     private val userManager: UserManager,
     private val smsService: SmsService,
     private val userRepository: UserRepository,
+    private val rentalInfoRepository: RentalInfoRepository,
     private val userFileRepository: UserFileRepository,
     private val invitationCodeRepository: InvitationCodeRepository,
     private val tableTemplateService: TableTemplateService,
     private val transactionTemplate: TransactionTemplate,
+    private val threadPoolTaskExecutor: ThreadPoolTaskExecutor,
+    private val invalidateStatus: InvalidateStatus,
     @Value("\${static.file.prefix}")
     private val staticFilePrefix: String,
     @Value("\${server.port}")
@@ -305,10 +313,10 @@ class UserServiceImpl(
 
             1 -> {
                 return runCatching {
-                    val user = userRepository.findById(
+                    val user = userRepository.findByIdAndStatus(
                         RequestContext.user?.id
                             ?: return Response.failure("无法验证用户信息, 请登录!")
-                    ).get()
+                    ) ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
                     if (MD5Util.encode(request.oldPassword) != user.password)
                         return Response.failure("原密码错误")
                     if (request.password1!!.length < 8 || request.password1.length > 30)
@@ -383,7 +391,7 @@ class UserServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun modifyUserInfo(request: ModifyUserInfoRequest): Response<Unit> {
         return runCatching {
-            val user = userRepository.findById(request.id ?: RequestContext.user!!.id).get()
+            var user = userRepository.findById(request.id ?: RequestContext.user!!.id).get()
             if (!request.email.isNullOrBlank()) user.email = request.email!!
             if (!request.username.isNullOrBlank()) {
                 val t = userRepository.findByIdentifier(request.username)
@@ -408,7 +416,9 @@ class UserServiceImpl(
             if (!request.location.isNullOrBlank()) user.location = request.location
             if (!request.companyName.isNullOrBlank()) user.companyName = request.companyName
             if (!request.position.isNullOrBlank()) user.position = request.position
-            userRepository.save(user)
+            user = userRepository.save(user)
+
+            if (request.status == false) executeFreeUserTask(user)
             Response.success<Unit>("修改成功")
         }.onFailure {
             if (it is NoSuchElementException) {
@@ -419,10 +429,22 @@ class UserServiceImpl(
         }.getOrDefault(Response.failure("修改失败, 发生意外错误"))
     }
 
+    private fun executeFreeUserTask(user: User) {
+        val rentalInfos =
+            rentalInfoRepository.findAllByIdsAndStatus(user.rentalInfoIds.parseArray<Long>())
+        transactionTemplate.execute { _ ->
+            rentalInfoRepository.saveAll(rentalInfos.onEach {
+                it.endTime = LocalDate.now().minusDays(LONG_1)
+            })
+        }
+        threadPoolTaskExecutor.execute(invalidateStatus)
+    }
+
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun modifyEmail(request: ModifyEmailRequest): Response<Unit> {
         return runCatching {
-            val user = userRepository.findById(RequestContext.user!!.id).get()
+            val user = userRepository.findByIdAndStatus(RequestContext.user!!.id)
+                ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
             val (result, message) = emailCheck(request.email)
             if (!result && message != null) return message
             val t = userRepository.findByEmail(request.email!!)

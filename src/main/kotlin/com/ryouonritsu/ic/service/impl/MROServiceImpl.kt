@@ -1,5 +1,7 @@
 package com.ryouonritsu.ic.service.impl
 
+import com.ryouonritsu.ic.common.enums.ExceptionEnum
+import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.protocol.request.*
@@ -125,10 +127,11 @@ class MROServiceImpl(
             val total = result.totalElements
             val orders = result.content.map { it.toDTO() }
             orders.forEach {
-                it.userInfo = userRepository.findById(it.customId.toLong()).get().toMROUserInfoDTO()
+                it.userInfo = userRepository.findByIdAndStatus(it.customId.toLong())
+                    ?.toMROUserInfoDTO() ?: return@forEach
                 if (it.workerId.toLong() != 0L) {
-                    it.workerInfo =
-                        userRepository.findById(it.workerId.toLong()).get().toMROUserInfoDTO()
+                    it.workerInfo = userRepository.findByIdAndStatus(it.workerId.toLong())
+                        ?.toMROUserInfoDTO()
                 }
             }
             Response.success(ListMROResponse(total, orders))
@@ -143,7 +146,8 @@ class MROServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun createMRO(request: CreateMRORequest): Response<Unit> {
         return runCatching {
-            val user = userRepository.findById(RequestContext.user!!.id).get()
+            val user = userRepository.findByIdAndStatus(RequestContext.user!!.id)
+                ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
             val userType = getUserType(request.label)
             val userIdList =
                 userRepository.findAllByUserTypeAndStatus(userType.code).map { it.id }
@@ -185,7 +189,8 @@ class MROServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun adminModifyMRO(request: AdminModifyMRORequest): Response<Unit> {
         return runCatching {
-            userRepository.findById(RequestContext.user!!.id).get()
+            userRepository.findByIdAndStatus(RequestContext.user!!.id)
+                ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
             val mro = mroRepository.findByIdAndStatus(request.id!!.toLong())
                 ?: return Response.failure("维修工单不存在")
             mro.workerId = request.workerId!!.toLong()
@@ -200,7 +205,8 @@ class MROServiceImpl(
             notificationManager.publish(
                 PublishRequest(mro.customId, "MRO_feedback", customMsg, false)
             )
-            val user = userRepository.findById(mro.customId).get()
+            val user = userRepository.findByIdAndStatus(mro.customId)
+                ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
             val workerMsg = getMsg(user, mro)
             notificationManager.publish(
                 PublishRequest(mro.workerId, "MRO_notice", workerMsg, false)
@@ -219,7 +225,8 @@ class MROServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun workerModifyMRO(request: WorkerModifyMRORequest): Response<Unit> {
         return runCatching {
-            userRepository.findById(RequestContext.user!!.id).get()
+            userRepository.findByIdAndStatus(RequestContext.user!!.id)
+                ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
             val mro = mroRepository.findByIdAndStatus(request.id!!.toLong())
                 ?: return Response.failure("维修工单不存在")
             mro.resolvent = request.resolvent!!
@@ -265,7 +272,8 @@ class MROServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun statistics(year: Int): Response<Map<Month, Map<String, Int>>> {
         return runCatching {
-            userRepository.findById(RequestContext.user!!.id).get()
+            userRepository.findByIdAndStatus(RequestContext.user!!.id)
+                ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
             val specification = Specification<MRO> { root, query, cb ->
                 val predicates = mutableListOf<Predicate>()
                 predicates += cb.greaterThanOrEqualTo(

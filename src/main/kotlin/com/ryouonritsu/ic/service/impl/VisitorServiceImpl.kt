@@ -1,5 +1,7 @@
 package com.ryouonritsu.ic.service.impl
 
+import com.ryouonritsu.ic.common.enums.ExceptionEnum
+import com.ryouonritsu.ic.common.exception.ServiceException
 import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.dto.VisitorDTO
@@ -137,7 +139,10 @@ class VisitorServiceImpl(
     override fun statisticsCompany(): Response<List<Map<String, Any>>> {
         return runCatching {
             val visitList = visitorRepository.findAll()
-                .groupBy { userRepository.findById(it.customId).get().companyName }
+                .groupBy {
+                    userRepository.findByIdAndStatus(it.customId)?.companyName
+                        ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
+                }
                 .mapValues { it.value.size }
                 .map { mapOf<String, Any>("name" to it.key, "value" to it.value) }
             Response.success("查询成功", visitList)

@@ -50,8 +50,8 @@ class AuthCheckAspect(
             return
 
         val user by lazy {
-            userRepository.findById(RequestContext.user!!.id)
-                .orElseThrow { throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST) }
+            userRepository.findByIdAndStatus(RequestContext.user!!.id)
+                ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
         }
         if (AuthEnum.ADMIN in authCheck.auth && user.userType == User.UserType.ADMIN())
             return

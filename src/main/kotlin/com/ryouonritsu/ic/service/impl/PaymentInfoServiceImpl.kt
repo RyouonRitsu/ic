@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 import javax.persistence.criteria.Predicate
-import kotlin.jvm.optionals.getOrElse
 
 /**
  * @author ryouonritsu
@@ -41,9 +40,8 @@ class PaymentInfoServiceImpl(
     override fun create(request: AddPaymentRequest): Response<PaymentInfoDTO> {
         val user = userRepository.findByIdAndStatus(request.userId!!)
             ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
-        val rentalInfo = rentalInfoRepository.findById(request.rentalId!!).getOrElse {
-            throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
-        }
+        val rentalInfo = rentalInfoRepository.findByIdAndStatus(request.rentalId!!)
+            ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
         var paymentInfo = PaymentInfo(
             userId = request.userId,
             rentalId = request.rentalId,

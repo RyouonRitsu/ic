@@ -75,6 +75,7 @@ class UserController(
 
     @ServiceLog(description = "管理员上传单个用户信息")
     @PostMapping("/addSingleUser")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
     @Tag(name = "用户接口")
     @Operation(summary = "添加单个用户", description = "")
     fun addSingleUser(@RequestBody @Valid request: AddSingleUserRequest) =

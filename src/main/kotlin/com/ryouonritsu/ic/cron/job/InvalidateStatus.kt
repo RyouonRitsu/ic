@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.parseArray
 import com.alibaba.fastjson2.toJSONString
 import com.ryouonritsu.ic.common.annotation.CronJob
 import com.ryouonritsu.ic.common.annotation.ScheduledTask
+import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.entity.*
 import com.ryouonritsu.ic.repository.*
 import org.slf4j.LoggerFactory
@@ -22,10 +23,12 @@ class InvalidateStatus(
     private val userRepository: UserRepository,
     private val paymentInfoRepository: PaymentInfoRepository,
     private val roomRepository: RoomRepository,
+    private val invitationCodeRepository: InvitationCodeRepository,
     private val mroRepository: MRORepository,
     private val eventRepository: EventRepository,
     private val visitorRepository: VisitorRepository,
-    private val transactionTemplate: TransactionTemplate
+    private val transactionTemplate: TransactionTemplate,
+    private val redisUtils: RedisUtils
 ) : ScheduledTask {
     companion object {
         private val log = LoggerFactory.getLogger(InvalidateStatus::class.java)
@@ -52,7 +55,8 @@ class InvalidateStatus(
         val invalidMROs = mutableListOf<MRO>()
         val invalidEvents = mutableListOf<Event>()
         val invalidVisitors = mutableListOf<Visitor>()
-        val changedUsers = mutableSetOf<User>()
+        val invalidInvitationCode = mutableListOf<InvitationCode>()
+        val changedUsers = mutableMapOf<Long, User>()
         val availableRooms = mutableListOf<Room>()
         allRentalInfos.forEach {
             if (!now.isAfter(it.endTime)) return@forEach
@@ -76,7 +80,9 @@ class InvalidateStatus(
             }
 
             // change user
-            val user = userRepository.findByIdAndStatus(it.userId) ?: return@forEach
+            val user = changedUsers[it.userId]
+                ?: userRepository.findByIdAndStatus(it.userId)
+                ?: return@forEach
             user.paymentInfoIds = run {
                 val ids = user.paymentInfoIds.parseArray<Long>()
                 ids -= relatedPaymentInfo.map { info -> info.id }.toSet()
@@ -88,23 +94,27 @@ class InvalidateStatus(
                 Pair(ids, ids.toJSONString())
             }
             user.rentalInfoIds = rentalInfoIds
-            changedUsers += user.apply {
+            changedUsers[user.id] = user.apply {
                 if (ids.isEmpty() && user.userType == User.UserType.CLIENT()) status = false
             }
         }
 
-        changedUsers.forEach {
-            if (!it.status) {
+        changedUsers.forEach { (id, user) ->
+            if (!user.status) {
+                // invalidate invitationCode
+                val invitationCode = invitationCodeRepository.findAllByUserIdAndStatus(id)
+                invalidInvitationCode += invitationCode.onEach { c -> c.status = false }
+
                 // invalidate mro
-                val mro = mroRepository.findAllByCustomIdAndStatus(it.id)
+                val mro = mroRepository.findAllByCustomIdAndStatus(id)
                 invalidMROs += mro.onEach { m -> m.status = false }
 
                 // invalidate events
-                val events = eventRepository.findAllByUserIdAndStatus(it.id)
+                val events = eventRepository.findAllByUserIdAndStatus(id)
                 invalidEvents += events.onEach { e -> e.status = false }
 
                 // invalidate visitors
-                val visitors = visitorRepository.findAllByCustomIdAndStatus(it.id)
+                val visitors = visitorRepository.findAllByCustomIdAndStatus(id)
                 invalidVisitors += visitors.onEach { v -> v.status = false }
             }
         }
@@ -118,6 +128,10 @@ class InvalidateStatus(
                 log.info("[InvalidateStatus] invalidating paymentInfo in ${invalidPaymentInfos.map { it.id }}")
                 paymentInfoRepository.saveAll(invalidPaymentInfos)
             }
+            if (invalidInvitationCode.isNotEmpty()) {
+                log.info("[InvalidateStatus] invalidating invitationCode in ${invalidInvitationCode.map { it.id }}")
+                invitationCodeRepository.saveAll(invalidInvitationCode)
+            }
             if (invalidMROs.isNotEmpty()) {
                 log.info("[InvalidateStatus] invalidating mro in ${invalidMROs.map { it.id }}")
                 mroRepository.saveAll(invalidMROs)
@@ -129,14 +143,15 @@ class InvalidateStatus(
             if (invalidVisitors.isNotEmpty()) {
                 log.info("[InvalidateStatus] invalidating visitors in ${invalidVisitors.map { it.id }}")
                 visitorRepository.saveAll(invalidVisitors)
+                invalidVisitors.map { it.phoneNumber }.forEach { redisUtils - it }
             }
             if (availableRooms.isNotEmpty()) {
                 log.info("[InvalidateStatus] freeing room in ${availableRooms.map { it.id }}")
                 roomRepository.saveAll(availableRooms)
             }
             if (changedUsers.isNotEmpty()) {
-                log.info("[InvalidateStatus] changing user in ${changedUsers.map { it.id }}")
-                userRepository.saveAll(changedUsers)
+                log.info("[InvalidateStatus] changing user in ${changedUsers.keys}")
+                userRepository.saveAll(changedUsers.values)
             }
         }
         log.info("================================ InvalidateStatus Finished ================================")
