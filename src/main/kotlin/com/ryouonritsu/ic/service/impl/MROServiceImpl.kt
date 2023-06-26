@@ -72,7 +72,7 @@ class MROServiceImpl(
     fun getUserMsg(mro: MRO): String {
         return "{\"mroId\":\"${mro.id}\"," +
                 "\"problem\":\"${mro.problem}\"," +
-                "\"status\":\"${mro.status}\"}"
+                "\"status\":\"${mro.mroStatus}\"}"
     }
 
     override fun list(
