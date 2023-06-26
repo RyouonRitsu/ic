@@ -24,6 +24,7 @@ class InvalidateStatus(
     private val roomRepository: RoomRepository,
     private val mroRepository: MRORepository,
     private val eventRepository: EventRepository,
+    private val visitorRepository: VisitorRepository,
     private val transactionTemplate: TransactionTemplate
 ) : ScheduledTask {
     companion object {
@@ -50,6 +51,7 @@ class InvalidateStatus(
         val invalidPaymentInfos = mutableListOf<PaymentInfo>()
         val invalidMROs = mutableListOf<MRO>()
         val invalidEvents = mutableListOf<Event>()
+        val invalidVisitors = mutableListOf<Visitor>()
         val changedUsers = mutableSetOf<User>()
         val availableRooms = mutableListOf<Room>()
         allRentalInfos.forEach {
@@ -100,6 +102,10 @@ class InvalidateStatus(
                 // invalidate events
                 val events = eventRepository.findAllByUserIdAndStatus(it.id)
                 invalidEvents += events.onEach { e -> e.status = false }
+
+                // invalidate visitors
+                val visitors = visitorRepository.findAllByCustomIdAndStatus(it.id)
+                invalidVisitors += visitors.onEach { v -> v.status = false }
             }
         }
 
@@ -119,6 +125,10 @@ class InvalidateStatus(
             if (invalidEvents.isNotEmpty()) {
                 log.info("[InvalidateStatus] invalidating events in ${invalidEvents.map { it.id }}")
                 eventRepository.saveAll(invalidEvents)
+            }
+            if (invalidVisitors.isNotEmpty()) {
+                log.info("[InvalidateStatus] invalidating visitors in ${invalidVisitors.map { it.id }}")
+                visitorRepository.saveAll(invalidVisitors)
             }
             if (availableRooms.isNotEmpty()) {
                 log.info("[InvalidateStatus] freeing room in ${availableRooms.map { it.id }}")

@@ -67,6 +67,16 @@ object ICConstant {
     const val LONG_1 = 1L
 
     /**
+     * Long型12
+     */
+    const val LONG_12 = 12L
+
+    /**
+     * Long型30
+     */
+    const val LONG_30 = 30L
+
+    /**
      * 空字符串
      */
     const val EMPTY_STR = ""

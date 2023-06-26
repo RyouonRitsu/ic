@@ -10,5 +10,7 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface VisitorRepository : JpaRepositoryImplementation<Visitor, Long> {
+    fun findAllByStatus(status: Boolean = true): List<Visitor>
+    fun findAllByCustomIdAndStatus(customId: Long, status: Boolean = true): List<Visitor>
     fun findByIdAndStatus(id: Long, status: Boolean = true): Visitor?
 }
