@@ -1,5 +1,6 @@
 package com.ryouonritsu.ic.service
 
+import com.ryouonritsu.ic.domain.dto.VisitorDTO
 import com.ryouonritsu.ic.domain.protocol.request.CreateVisitorRequest
 import com.ryouonritsu.ic.domain.protocol.response.Response
 
@@ -8,5 +9,5 @@ import com.ryouonritsu.ic.domain.protocol.response.Response
  * @Date 2023/6/26 11:02
  */
 interface VisitorService {
-    fun createVisitor(request: CreateVisitorRequest): Response<Unit>
+    fun createVisitor(request: CreateVisitorRequest): Response<VisitorDTO>
 }

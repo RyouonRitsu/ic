@@ -11,19 +11,16 @@ import javax.validation.constraints.NotNull
  */
 @Schema(description = "创建访客信息")
 data class CreateVisitorRequest(
-    @field:NotNull
     @field:NotBlank
     @Schema(description = "访客人员姓名", required = true)
-    var visitorName: String,
-    @field:NotNull
+    var visitorName: String?,
     @field:NotBlank
     @Schema(description = "身份证号码", required = true)
-    var cardNumber: String,
-    @field:NotNull
+    var cardNumber: String?,
     @field:NotBlank
     @Schema(description = "手机号码", required = true)
-    var phoneNumber: String,
+    var phoneNumber: String?,
     @field:NotNull
     @Schema(description = "到访时间", example = "2023-06-28T13:00:00", required = true)
-    var visitTime: LocalDateTime,
+    var visitTime: LocalDateTime?,
 )
