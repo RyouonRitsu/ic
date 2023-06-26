@@ -69,6 +69,16 @@ class VisitorController(
         @Valid @NotNull @NotBlank date: String,
     ) = visitorService.statisticsDay(date)
 
+    @ServiceLog(description = "访客公司统计")
+    @GetMapping("/statisticsCompany")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
+    @Tag(name = "访客接口")
+    @Operation(
+        summary = "管理员统计公司访客",
+        description = "按日返回"
+    )
+    fun statisticsCompany() = visitorService.statisticsCompany()
+
     @ServiceLog(description = "客户查看自己的访客申请")
     @GetMapping("/listVisitorForUser")
     @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN, AuthEnum.CLIENT])

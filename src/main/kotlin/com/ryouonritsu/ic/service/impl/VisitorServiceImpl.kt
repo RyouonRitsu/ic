@@ -133,6 +133,23 @@ class VisitorServiceImpl(
         }.getOrDefault(Response.failure("查询失败, 发生意外错误"))
     }
 
+    @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
+    override fun statisticsCompany(): Response<List<Map<String, Any>>> {
+        return runCatching {
+            val visitList = visitorRepository.findAll()
+                .groupBy { userRepository.findById(it.customId).get().companyName }
+                .mapValues { it.value.size }
+                .map { mapOf<String, Any>("name" to it.key, "value" to it.value) }
+            Response.success("查询成功", visitList)
+        }.onFailure {
+            if (it is NoSuchElementException) {
+                redisUtils - "${RequestContext.user!!.id}"
+                return Response.failure("数据库中没有此用户或可能是token验证失败, 此会话已失效")
+            }
+            log.error(it.stackTraceToString())
+        }.getOrDefault(Response.failure("查询失败, 发生意外错误"))
+    }
+
     override fun list(
         ids: List<Long>?,
         userId: Long?,
