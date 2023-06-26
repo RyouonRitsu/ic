@@ -10,4 +10,8 @@ import com.ryouonritsu.ic.domain.protocol.response.Response
  */
 interface VisitorService {
     fun createVisitor(request: CreateVisitorRequest): Response<VisitorDTO>
+
+    fun statisticsDay(date: String): Response<Map<String, List<Any>>>
+
+    fun statisticsMonth(year: Int): Response<Map<String, List<Any>>>
 }

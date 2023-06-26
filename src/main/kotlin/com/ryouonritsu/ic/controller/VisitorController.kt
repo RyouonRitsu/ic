@@ -6,13 +6,13 @@ import com.ryouonritsu.ic.common.enums.AuthEnum
 import com.ryouonritsu.ic.domain.protocol.request.CreateVisitorRequest
 import com.ryouonritsu.ic.service.VisitorService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
+import javax.validation.constraints.NotBlank
+import javax.validation.constraints.NotNull
 
 /**
  * @Author Kude
@@ -35,4 +35,36 @@ class VisitorController(
     )
     fun createVisitor(@RequestBody @Valid request: CreateVisitorRequest) =
         visitorService.createVisitor(request)
+
+    @ServiceLog(description = "访客月统计")
+    @GetMapping("/statisticsMonth")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
+    @Tag(name = "访客接口")
+    @Operation(
+        summary = "管理员统计月访客",
+        description = "按月返回"
+    )
+    fun statisticsMonth(
+        @RequestParam(
+            "year",
+            required = true
+        ) @Parameter(description = "统计年份")
+        @Valid @NotNull year: Int,
+    ) = visitorService.statisticsMonth(year)
+
+    @ServiceLog(description = "访客日统计")
+    @GetMapping("/statisticsDay")
+    @AuthCheck(auth = [AuthEnum.TOKEN, AuthEnum.ADMIN])
+    @Tag(name = "访客接口")
+    @Operation(
+        summary = "管理员统计日访客",
+        description = "按日返回"
+    )
+    fun statisticsDay(
+        @RequestParam(
+            "date",
+            required = true
+        ) @Parameter(description = "统计日期，示例：2011-12-03")
+        @Valid @NotNull @NotBlank date: String,
+    ) = visitorService.statisticsDay(date)
 }
