@@ -11,14 +11,11 @@ import com.ryouonritsu.ic.repository.UserRepository
 import com.ryouonritsu.ic.repository.VisitorRepository
 import com.ryouonritsu.ic.service.VisitorService
 import org.slf4j.LoggerFactory
-import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
-import javax.persistence.criteria.Predicate
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -136,7 +133,12 @@ class VisitorServiceImpl(
         }.getOrDefault(Response.failure("查询失败, 发生意外错误"))
     }
 
-    override fun list(ids: List<Long>?, userId: Long?, page: Int, limit: Int): Response<ListResponse<VisitorDTO>> {
+    override fun list(
+        ids: List<Long>?,
+        userId: Long?,
+        page: Int,
+        limit: Int
+    ): Response<ListResponse<VisitorDTO>> {
         val specification = Specification<Visitor> { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
             if (!ids.isNullOrEmpty()) predicates += cb.`in`(root.get<Long>("id")).apply {

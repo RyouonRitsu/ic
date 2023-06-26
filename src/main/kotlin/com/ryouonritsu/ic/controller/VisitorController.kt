@@ -8,19 +8,12 @@ import com.ryouonritsu.ic.service.VisitorService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.jetbrains.annotations.NotNull
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
+import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
-import javax.validation.constraints.Min
 
 /**
  * @Author Kude
@@ -85,10 +78,19 @@ class VisitorController(
         description = "根据上下文，确定客户ID，从而只查询自己的访客记录"
     )
     fun listVisitorForUser(
-        @RequestParam("ids", required = false)@Parameter(description = "访客id， 精确") ids: List<Long>?,
-        @RequestParam("page", required = true)@Parameter(description = "页码，从1开始") @Valid @NotNull @Min(1) page: Int?,
-        @RequestParam("limit") @Parameter(description = "每页数量, 大于0", required = true) @Valid @javax.validation.constraints.NotNull @Min(1) limit: Int?
-        ) = visitorService.list(ids, null, page!!, limit!!)
+        @RequestParam(
+            "ids",
+            required = false
+        ) @Parameter(description = "访客记录id集合") ids: List<Long>?,
+        @RequestParam("page") @Parameter(
+            description = "页码, 从1开始",
+            required = true
+        ) @Valid @NotNull @Min(1) page: Int?,
+        @RequestParam("limit") @Parameter(
+            description = "每页数量, 大于0",
+            required = true
+        ) @Valid @NotNull @Min(1) limit: Int?
+    ) = visitorService.list(ids, null, page!!, limit!!)
 
     @ServiceLog(description = "管理员查看所有的的访客申请")
     @GetMapping("/listVisitorForAdmin")
@@ -99,9 +101,21 @@ class VisitorController(
         description = "管理员主动输入邀请人ID， 从而精确查询"
     )
     fun listVisitorForAdmin(
-        @RequestParam("ids", required = false)@Parameter(description = "访客id， 精确") ids: List<Long>?,
-        @RequestParam("userId", required = false)@Parameter(description = "用户id， 精确") userId: Long?,
-        @RequestParam("page", required = true)@Parameter(description = "页码，从1开始") @Valid @NotNull @Min(1) page: Int?,
-        @RequestParam("limit") @Parameter(description = "每页数量, 大于0", required = true) @Valid @javax.validation.constraints.NotNull @Min(1) limit: Int?
+        @RequestParam(
+            "ids",
+            required = false
+        ) @Parameter(description = "访客记录id集合") ids: List<Long>?,
+        @RequestParam(
+            "userId",
+            required = false
+        ) @Parameter(description = "用户id") userId: Long?,
+        @RequestParam("page") @Parameter(
+            description = "页码, 从1开始",
+            required = true
+        ) @Valid @NotNull @Min(1) page: Int?,
+        @RequestParam("limit") @Parameter(
+            description = "每页数量, 大于0",
+            required = true
+        ) @Valid @NotNull @Min(1) limit: Int?
     ) = visitorService.list(ids, userId, page!!, limit!!)
 }
