@@ -60,6 +60,9 @@ class MROController(
         @RequestParam(
             required = false
         ) @Parameter(description = "关键词，模糊") keyword: String?,
+        @RequestParam(
+            required = false
+        ) @Parameter(description = "是否历史查询") history: Boolean = false,
         @RequestParam("page") @Parameter(
             description = "页码, 从1开始",
             required = true
@@ -76,6 +79,7 @@ class MROController(
         mroStatus,
         keyword,
         label,
+        history,
         page!!,
         limit!!
     )

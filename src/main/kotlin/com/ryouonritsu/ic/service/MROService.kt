@@ -21,6 +21,7 @@ interface MROService {
         mroStatus: Int?,
         keyword: String?,
         label: String?,
+        history: Boolean,
         page: Int,
         limit: Int
     ): Response<ListMROResponse>

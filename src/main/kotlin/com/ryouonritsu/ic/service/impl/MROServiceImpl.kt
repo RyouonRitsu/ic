@@ -83,6 +83,7 @@ class MROServiceImpl(
         mroStatus: Int?,
         keyword: String?,
         label: String?,
+        history: Boolean,
         page: Int,
         limit: Int
     ): Response<ListMROResponse> {
@@ -113,7 +114,9 @@ class MROServiceImpl(
                 if (!label.isNullOrBlank()) {
                     predicates += cb.equal(root.get<String>("label"), label)
                 }
-                predicates += cb.equal(root.get<Boolean>("status"), true)
+                if (!history) {
+                    predicates += cb.equal(root.get<Boolean>("status"), true)
+                }
                 query.where(*predicates.toTypedArray())
                     .orderBy(cb.asc(root.get<Int>("mroStatus")))
                     .restriction
