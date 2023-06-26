@@ -216,15 +216,25 @@ class UserServiceImpl(
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun addSingleUser(request: AddSingleUserRequest): Response<Unit> {
-        userRepository.save(
-            User(
-                email = request.email!!,
-                username = request.username!!,
-                password = request.password!!,
-                avatar = request.avatar,
-                legalName = request.legalName!!
-            )
+        val t = userRepository.findByEmail(request.email!!)
+        if (t != null) return Response.failure("该邮箱已被注册")
+        val temp = userRepository.findByIdentifier(request.username!!)
+        if (temp != null) return Response.failure("用户名已存在")
+        if (request.password1 != request.password2) return Response.failure("两次输入的密码不一致")
+        val user = User(
+            email = request.email,
+            username = request.username,
+            password = MD5Util.encode(request.password1),
+            legalName = request.legalName!!,
+            phone = request.phone!!,
+            userType = request.userType!!.toInt(),
         )
+        if (request.companyName != null) user.companyName = request.companyName
+        if (request.position != null) user.position = request.position
+        if (request.avatar != null) user.avatar = request.avatar
+
+        userRepository.save(user)
+
         return Response.success("添加单个用户成功")
     }
 

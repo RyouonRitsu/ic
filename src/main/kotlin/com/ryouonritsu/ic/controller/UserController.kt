@@ -75,7 +75,7 @@ class UserController(
 
     @ServiceLog(description = "管理员上传单个用户信息")
     @PostMapping("/addSingleUser")
-    @Tag(name = "管理员专用接口")
+    @Tag(name = "用户接口")
     @Operation(summary = "添加单个用户", description = "")
     fun addSingleUser(@RequestBody @Valid request: AddSingleUserRequest) =
         userService.addSingleUser(request)
