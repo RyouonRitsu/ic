@@ -4,6 +4,7 @@ import com.ryouonritsu.ic.common.utils.RedisUtils
 import com.ryouonritsu.ic.common.utils.RequestContext
 import com.ryouonritsu.ic.domain.dto.VisitorDTO
 import com.ryouonritsu.ic.domain.protocol.request.CreateVisitorRequest
+import com.ryouonritsu.ic.domain.protocol.response.ListResponse
 import com.ryouonritsu.ic.domain.protocol.response.Response
 import com.ryouonritsu.ic.entity.Visitor
 import com.ryouonritsu.ic.repository.UserRepository
@@ -11,9 +12,13 @@ import com.ryouonritsu.ic.repository.VisitorRepository
 import com.ryouonritsu.ic.service.VisitorService
 import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
+import javax.persistence.criteria.Predicate
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -129,5 +134,23 @@ class VisitorServiceImpl(
             }
             log.error(it.stackTraceToString())
         }.getOrDefault(Response.failure("查询失败, 发生意外错误"))
+    }
+
+    override fun list(ids: List<Long>?, userId: Long?, page: Int, limit: Int): Response<ListResponse<VisitorDTO>> {
+        val specification = Specification<Visitor> { root, query, cb ->
+            val predicates = mutableListOf<Predicate>()
+            if (!ids.isNullOrEmpty()) predicates += cb.`in`(root.get<Long>("id")).apply {
+                ids.forEach { this.value(it) }
+            }
+            predicates += cb.equal(root.get<Long>("userId"), userId ?: RequestContext.user!!.id)
+            predicates += cb.equal(root.get<Boolean>("status"), true)
+            query.where(*predicates.toTypedArray())
+                .orderBy(cb.desc(root.get<LocalDateTime>("createTime")))
+                .restriction
+        }
+        val result = visitorRepository.findAll(specification, PageRequest.of(page - 1, limit))
+        val total = result.totalElements
+        val list = result.content.map { it.toDTO() }
+        return Response.success(ListResponse(list, total))
     }
 }
