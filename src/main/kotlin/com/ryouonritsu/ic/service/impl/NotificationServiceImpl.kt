@@ -63,7 +63,10 @@ class NotificationServiceImpl(
             )
             predicates += cb.equal(root.get<Long>("userId"), RequestContext.user!!.id)
             query.where(*predicates.toTypedArray())
-                .orderBy(cb.desc(root.get<LocalDateTime>("createTime")))
+                .orderBy(
+                    cb.desc(root.get<Boolean>("status")),
+                    cb.desc(root.get<LocalDateTime>("createTime"))
+                )
                 .restriction
         }
         val result =

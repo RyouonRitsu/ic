@@ -110,7 +110,7 @@ class User(
         ADMIN(1, "管理员"),
         WATER_MAINTENANCE_STAFF(2, "水维修人员"),
         ELECTRICITY_MAINTENANCE_STAFF(3, "电维修人员"),
-        MACHINE_MAINTENANCE_STAFF(4, "机器维修人员");
+        MACHINE_MAINTENANCE_STAFF(4, "机械维修人员");
 
         companion object {
             fun valueOf(code: Int) = values().find { it.code == code } ?: CLIENT

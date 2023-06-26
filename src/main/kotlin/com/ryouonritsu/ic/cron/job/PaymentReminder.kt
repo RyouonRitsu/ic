@@ -67,6 +67,7 @@ class PaymentReminder(
                         name = ICConstant.PAYMENT_REMINDER_NAME,
                         message = String.format(
                             ICConstant.PAYMENT_REMINDER_MESSAGE,
+                            rentalInfo.roomId,
                             expireDateOfThisYear.format(DateTimeFormatter.ISO_DATE)
                         )
                     )
