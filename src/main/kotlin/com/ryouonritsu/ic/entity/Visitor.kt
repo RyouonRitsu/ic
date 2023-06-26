@@ -1,6 +1,9 @@
 package com.ryouonritsu.ic.entity
 
+import com.alibaba.fastjson2.to
+import com.alibaba.fastjson2.toJSONString
 import com.ryouonritsu.ic.domain.dto.VisitorDTO
+import com.ryouonritsu.ic.domain.dto.VisitorInfoDTO
 import java.time.LocalDateTime
 import javax.persistence.*
 
@@ -50,6 +53,8 @@ class Visitor(
         nullable = false
     )
     var visitStatus: Int = 0,
+    @Column(name = "visitor_info", columnDefinition = "TEXT COMMENT '访客其他信息JSON'")
+    var visitorInfo: String = VisitorInfoDTO().toJSONString(),
     @Column(columnDefinition = "TINYINT(3) DEFAULT '1' COMMENT '生效状态'", nullable = false)
     var status: Boolean = true,
     @Column(columnDefinition = "INT DEFAULT '1' COMMENT '版本'", nullable = false)
@@ -75,6 +80,7 @@ class Visitor(
         phoneNumber = phoneNumber,
         visitTime = visitTime,
         visitStatus = "$visitStatus",
+        visitorInfo = visitorInfo.to(),
         createTime = createTime,
         modifyTime = modifyTime,
     )

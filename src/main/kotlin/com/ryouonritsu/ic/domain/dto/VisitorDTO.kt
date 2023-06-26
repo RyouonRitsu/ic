@@ -23,6 +23,8 @@ data class VisitorDTO(
     var visitTime: LocalDateTime,
     @Schema(description = "访问状态", example = "0", required = true)
     var visitStatus: String = "0",
+    @Schema(description = "附加信息", required = true)
+    val visitorInfo: VisitorInfoDTO = VisitorInfoDTO(),
     @Schema(description = "创建时间", example = "2023-06-16 18:19:22", required = true)
     var createTime: LocalDateTime,
     @Schema(description = "最后修改时间", example = "2023-06-16 18:19:22", required = true)
