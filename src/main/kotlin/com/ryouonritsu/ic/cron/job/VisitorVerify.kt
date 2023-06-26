@@ -43,14 +43,15 @@ class VisitorVerify(
      * @see java.lang.Thread.run
      */
     override fun run() {
+        log.info("================================ Running VisitorVerify ================================")
         val allVisitors = visitorRepository.findAllByStatus()
         val now = LocalDateTime.now()
         allVisitors.forEach {
             when (Visitor.VisitStatus.valueOf(it.visitStatus)) {
                 Visitor.VisitStatus.INACCESSIBLE -> {
                     val checkDateTime = it.visitTime.minusMinutes(ICConstant.LONG_30)
-                    log.info("[VisitorVerify] checkDateTime is $checkDateTime")
-                    if (checkDateTime != now) return@forEach
+                    log.info("[VisitorVerify] inaccessible checkDateTime is $checkDateTime")
+                    if (!checkDateTime.equalsIgnoreSecond(now)) return@forEach
 
                     threadPoolTaskExecutor.submit {
                         val verificationCode = (1..6).joinToString("") { "${(0..9).random()}" }
@@ -71,8 +72,8 @@ class VisitorVerify(
                 Visitor.VisitStatus.ACCESSIBLE -> {
                     val checkDateTime = it.visitTime.plusHours(ICConstant.LONG_12)
                         .minusMinutes(ICConstant.LONG_30)
-                    log.info("[VisitorVerify] checkDateTime is $checkDateTime")
-                    if (checkDateTime != now) return@forEach
+                    log.info("[VisitorVerify] accessible checkDateTime is $checkDateTime")
+                    if (!checkDateTime.equalsIgnoreSecond(now)) return@forEach
 
                     threadPoolTaskExecutor.submit {
                         redisUtils - it.phoneNumber
@@ -87,5 +88,11 @@ class VisitorVerify(
                 else -> return@forEach
             }
         }
+        log.info("================================ VisitorVerify Finished ================================")
+    }
+
+    private fun LocalDateTime.equalsIgnoreSecond(other: LocalDateTime): Boolean {
+        return this.year == other.year && this.month == other.month && this.dayOfMonth == other.dayOfMonth
+                && this.hour == other.hour && this.minute == other.minute
     }
 }
