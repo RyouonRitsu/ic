@@ -52,7 +52,7 @@ class Visitor(
         columnDefinition = "TINYINT(3) DEFAULT '0' COMMENT '访问状态'",
         nullable = false
     )
-    var visitStatus: Int = 0,
+    var visitStatus: Int = VisitStatus.INACCESSIBLE(),
     @Column(name = "visitor_info", columnDefinition = "TEXT COMMENT '访客其他信息JSON'")
     var visitorInfo: String = VisitorInfoDTO().toJSONString(),
     @Column(columnDefinition = "TINYINT(3) DEFAULT '1' COMMENT '生效状态'", nullable = false)
@@ -72,6 +72,22 @@ class Visitor(
     )
     var modifyTime: LocalDateTime = LocalDateTime.now(),
 ) {
+    enum class VisitStatus(
+        val code: Int,
+        val desc: String
+    ) {
+        INACCESSIBLE(0, "不可访问"),
+        ACCESSIBLE(1, "可访问"),
+        EXPIRED(2, "已过期");
+
+        companion object {
+            fun valueOf(code: Int) = values().find { it.code == code } ?: INACCESSIBLE
+            fun getByDesc(desc: String) = values().find { it.desc == desc } ?: INACCESSIBLE
+        }
+
+        operator fun invoke() = code
+    }
+
     fun toDTO() = VisitorDTO(
         id = "$id",
         customId = "$customId",
