@@ -12,4 +12,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface MRORepository : JpaRepositoryImplementation<MRO, Long> {
     fun findByIdAndStatus(id: Long, status: Boolean = true): MRO?
+    fun findAllByCustomIdAndStatus(customId: Long, status: Boolean = true): List<MRO>
 }

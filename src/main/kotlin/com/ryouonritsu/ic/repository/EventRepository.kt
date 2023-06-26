@@ -9,5 +9,6 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface EventRepository : JpaRepositoryImplementation<Event, Long> {
+    fun findAllByUserIdAndStatus(userId: Long, status: Boolean = true): List<Event>
     fun countByUserIdAndStatus(userId: Long, status: Boolean = true): Long
 }
