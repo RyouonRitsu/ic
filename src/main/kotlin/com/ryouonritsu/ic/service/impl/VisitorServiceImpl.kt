@@ -138,7 +138,7 @@ class VisitorServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun statisticsCompany(): Response<List<Map<String, Any>>> {
         return runCatching {
-            val visitList = visitorRepository.findAll()
+            val visitList = visitorRepository.findAllByStatus(true)
                 .groupBy {
                     userRepository.findByIdAndStatus(it.customId)?.companyName
                         ?: throw ServiceException(ExceptionEnum.OBJECT_DOES_NOT_EXIST)
