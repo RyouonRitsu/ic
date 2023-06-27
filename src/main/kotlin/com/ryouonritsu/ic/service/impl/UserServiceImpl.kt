@@ -138,7 +138,7 @@ class UserServiceImpl(
     ): Response<Unit> {
         // 此处需替换成服务器地址!!!
 //        val (code, html) = getHtml("http://101.42.171.88:8090/registration_verification?verification_code=$verification_code")
-        val (code, html) = getHtml("http://localhost:$serverPort/$template?verification_code=$verificationCode")
+        val (code, html) = getHtml("http://localhost:$serverPort/$template?verificationCode=$verificationCode")
         val success = if (code == 200 && html != null) userManager.sendEmail(email, subject, html)
         else false
         return if (success) {
