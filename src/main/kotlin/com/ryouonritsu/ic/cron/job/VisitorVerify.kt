@@ -62,7 +62,7 @@ class VisitorVerify(
                         .minusMinutes(ICConstant.LONG_30)
                     val checkDateTime = it.visitTime.minusMinutes(ICConstant.LONG_30)
                     log.info("[VisitorVerify] inaccessible expiredDateTime is $expiredDateTime, checkDateTime is $checkDateTime")
-                    if (expiredDateTime.equalsIgnoreSecond(now)) {
+                    if (expiredDateTime.equalsIgnoreSecond(now) || expiredDateTime.isBefore(now)) {
                         setExpired(it)
                         return@forEach
                     }
@@ -89,7 +89,7 @@ class VisitorVerify(
                     val checkDateTime = it.visitTime.plusHours(ICConstant.LONG_12)
                         .minusMinutes(ICConstant.LONG_30)
                     log.info("[VisitorVerify] accessible checkDateTime is $checkDateTime")
-                    if (!checkDateTime.equalsIgnoreSecond(now)) return@forEach
+                    if (now.isBefore(checkDateTime)) return@forEach
 
                     threadPoolTaskExecutor.submit {
                         redisUtils - it.phoneNumber
