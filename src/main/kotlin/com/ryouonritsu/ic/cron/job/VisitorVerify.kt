@@ -46,11 +46,27 @@ class VisitorVerify(
         log.info("================================ Running VisitorVerify ================================")
         val allVisitors = visitorRepository.findAllByStatus()
         val now = LocalDateTime.now()
+
+        fun setExpired(visitor: Visitor) {
+            transactionTemplate.execute {
+                visitorRepository.save(visitor.apply {
+                    visitStatus = Visitor.VisitStatus.EXPIRED()
+                })
+            }
+        }
+
         allVisitors.forEach {
             when (Visitor.VisitStatus.valueOf(it.visitStatus)) {
                 Visitor.VisitStatus.INACCESSIBLE -> {
+                    val expiredDateTime = it.visitTime.plusHours(ICConstant.LONG_12)
+                        .minusMinutes(ICConstant.LONG_30)
                     val checkDateTime = it.visitTime.minusMinutes(ICConstant.LONG_30)
-                    log.info("[VisitorVerify] inaccessible checkDateTime is $checkDateTime")
+                    log.info("[VisitorVerify] inaccessible expiredDateTime is $expiredDateTime, checkDateTime is $checkDateTime")
+                    if (expiredDateTime.equalsIgnoreSecond(now)) {
+                        setExpired(it)
+                        return@forEach
+                    }
+
                     if (!checkDateTime.equalsIgnoreSecond(now)) return@forEach
 
                     threadPoolTaskExecutor.submit {
@@ -65,7 +81,7 @@ class VisitorVerify(
                                     visitStatus = Visitor.VisitStatus.ACCESSIBLE()
                                 })
                             }
-                        }
+                        } else setExpired(it)
                     }
                 }
 
@@ -77,11 +93,7 @@ class VisitorVerify(
 
                     threadPoolTaskExecutor.submit {
                         redisUtils - it.phoneNumber
-                        transactionTemplate.execute { _ ->
-                            visitorRepository.save(it.apply {
-                                visitStatus = Visitor.VisitStatus.EXPIRED()
-                            })
-                        }
+                        setExpired(it)
                     }
                 }
 

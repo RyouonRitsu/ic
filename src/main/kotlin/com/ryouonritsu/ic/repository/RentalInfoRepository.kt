@@ -14,4 +14,5 @@ interface RentalInfoRepository : JpaRepositoryImplementation<RentalInfo, Long> {
     fun findAllByIdsAndStatus(ids: List<Long>, status: Boolean = true): List<RentalInfo>
     fun findAllByStatus(status: Boolean = true): List<RentalInfo>
     fun findByIdAndStatus(id: Long, status: Boolean = true): RentalInfo?
+    fun findAllByUserIdAndStatus(userId: Long, status: Boolean = true): List<RentalInfo>
 }

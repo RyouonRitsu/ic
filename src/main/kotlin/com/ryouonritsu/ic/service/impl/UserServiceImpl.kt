@@ -1,11 +1,9 @@
 package com.ryouonritsu.ic.service.impl
 
-import com.alibaba.fastjson2.parseArray
 import com.ryouonritsu.ic.common.constants.ICConstant
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_0
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_1
 import com.ryouonritsu.ic.common.constants.ICConstant.INT_20000
-import com.ryouonritsu.ic.common.constants.ICConstant.LONG_1
 import com.ryouonritsu.ic.common.constants.TemplateType
 import com.ryouonritsu.ic.common.enums.ExceptionEnum
 import com.ryouonritsu.ic.common.exception.ServiceException
@@ -19,7 +17,6 @@ import com.ryouonritsu.ic.component.file.converter.UserUploadConverter
 import com.ryouonritsu.ic.component.getTemplate
 import com.ryouonritsu.ic.component.process
 import com.ryouonritsu.ic.component.read
-import com.ryouonritsu.ic.cron.job.InvalidateStatus
 import com.ryouonritsu.ic.domain.dto.UserDTO
 import com.ryouonritsu.ic.domain.protocol.request.*
 import com.ryouonritsu.ic.domain.protocol.response.ListUserResponse
@@ -29,10 +26,7 @@ import com.ryouonritsu.ic.entity.User
 import com.ryouonritsu.ic.entity.UserFile
 import com.ryouonritsu.ic.manager.db.UserManager
 import com.ryouonritsu.ic.manager.rpc.SmsService
-import com.ryouonritsu.ic.repository.InvitationCodeRepository
-import com.ryouonritsu.ic.repository.RentalInfoRepository
-import com.ryouonritsu.ic.repository.UserFileRepository
-import com.ryouonritsu.ic.repository.UserRepository
+import com.ryouonritsu.ic.repository.*
 import com.ryouonritsu.ic.service.TableTemplateService
 import com.ryouonritsu.ic.service.UserService
 import okhttp3.OkHttpClient
@@ -42,7 +36,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -68,10 +61,13 @@ class UserServiceImpl(
     private val rentalInfoRepository: RentalInfoRepository,
     private val userFileRepository: UserFileRepository,
     private val invitationCodeRepository: InvitationCodeRepository,
+    private val paymentInfoRepository: PaymentInfoRepository,
+    private val roomRepository: RoomRepository,
+    private val mroRepository: MRORepository,
+    private val eventRepository: EventRepository,
+    private val visitorRepository: VisitorRepository,
     private val tableTemplateService: TableTemplateService,
     private val transactionTemplate: TransactionTemplate,
-    private val threadPoolTaskExecutor: ThreadPoolTaskExecutor,
-    private val invalidateStatus: InvalidateStatus,
     @Value("\${static.file.prefix}")
     private val staticFilePrefix: String,
     @Value("\${server.port}")
@@ -391,7 +387,7 @@ class UserServiceImpl(
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)
     override fun modifyUserInfo(request: ModifyUserInfoRequest): Response<Unit> {
         return runCatching {
-            var user = userRepository.findById(request.id ?: RequestContext.user!!.id).get()
+            val user = userRepository.findById(request.id ?: RequestContext.user!!.id).get()
             if (!request.email.isNullOrBlank()) user.email = request.email!!
             if (!request.username.isNullOrBlank()) {
                 val t = userRepository.findByIdentifier(request.username)
@@ -416,9 +412,11 @@ class UserServiceImpl(
             if (!request.location.isNullOrBlank()) user.location = request.location
             if (!request.companyName.isNullOrBlank()) user.companyName = request.companyName
             if (!request.position.isNullOrBlank()) user.position = request.position
-            user = userRepository.save(user)
-
-            if (request.status == false) executeFreeUserTask(user)
+            if (request.status != null) {
+                user.status = request.status!!
+                executeFreeUserTask(user)
+            }
+            userRepository.save(user)
             Response.success<Unit>("修改成功")
         }.onFailure {
             if (it is NoSuchElementException) {
@@ -430,14 +428,36 @@ class UserServiceImpl(
     }
 
     private fun executeFreeUserTask(user: User) {
-        val rentalInfos =
-            rentalInfoRepository.findAllByIdsAndStatus(user.rentalInfoIds.parseArray<Long>())
-        transactionTemplate.execute { _ ->
-            rentalInfoRepository.saveAll(rentalInfos.onEach {
-                it.endTime = LocalDate.now().minusDays(LONG_1)
-            })
+        if (!user.status) {
+            val relatedRentalInfos = rentalInfoRepository.findAllByUserIdAndStatus(user.id)
+                .onEach { it.status = false }
+            val relatedPaymentInfos = paymentInfoRepository.findAllByUserIdAndStatus(user.id)
+                .onEach { it.status = false }
+            val relatedRooms = roomRepository.findAllByUserId(user.id).onEach {
+                it.userId = null
+                it.commence = null
+                it.terminate = null
+                it.contract = null
+                it.status = false
+            }
+            val relatedInvitationCodes = invitationCodeRepository.findAllByUserIdAndStatus(user.id)
+                .onEach { it.status = false }
+            val relatedMROs = mroRepository.findAllByCustomIdAndStatus(user.id)
+                .onEach { it.status = false }
+            val relatedEvents = eventRepository.findAllByUserIdAndStatus(user.id)
+                .onEach { it.status = false }
+            val relatedVisitors = visitorRepository.findAllByCustomIdAndStatus(user.id)
+                .onEach { it.status = false }
+            transactionTemplate.execute {
+                rentalInfoRepository.saveAll(relatedRentalInfos)
+                paymentInfoRepository.saveAll(relatedPaymentInfos)
+                roomRepository.saveAll(relatedRooms)
+                invitationCodeRepository.saveAll(relatedInvitationCodes)
+                mroRepository.saveAll(relatedMROs)
+                eventRepository.saveAll(relatedEvents)
+                visitorRepository.saveAll(relatedVisitors)
+            }
         }
-        threadPoolTaskExecutor.execute(invalidateStatus)
     }
 
     @Transactional(rollbackFor = [Exception::class], propagation = Propagation.REQUIRED)

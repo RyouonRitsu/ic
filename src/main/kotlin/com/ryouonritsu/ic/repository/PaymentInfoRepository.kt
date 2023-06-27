@@ -14,4 +14,5 @@ interface PaymentInfoRepository : JpaRepositoryImplementation<PaymentInfo, Long>
     @Query("SELECT p FROM PaymentInfo p WHERE p.id IN ?1 AND p.status = ?2")
     fun findAllByIdsAndStatus(ids: List<Long>, status: Boolean = true): List<PaymentInfo>
     fun findAllByRentalIdAndStatus(rentalId: Long, status: Boolean = true): List<PaymentInfo>
+    fun findAllByUserIdAndStatus(userId: Long, status: Boolean = true): List<PaymentInfo>
 }

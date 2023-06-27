@@ -54,6 +54,8 @@ dependencies {
     implementation("org.apache.commons:commons-pool2:2.11.1")
     // https://mvnrepository.com/artifact/com.aliyun/alibabacloud-dysmsapi20170525
     implementation("com.aliyun:alibabacloud-dysmsapi20170525:2.0.23")
+    // https://mvnrepository.com/artifact/pull-parser/pull-parser
+    implementation("pull-parser:pull-parser:2.1.10")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("com.mysql:mysql-connector-j")
     annotationProcessor("org.projectlombok:lombok")

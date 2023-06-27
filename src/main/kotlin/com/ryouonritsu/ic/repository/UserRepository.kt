@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface UserRepository : JpaRepositoryImplementation<User, Long> {
+    fun findAllByStatus(status: Boolean = true): List<User>
     fun findByIdAndStatus(id: Long, status: Boolean = true): User?
 
     fun findAllByUserTypeAndStatus(userType: Int, status: Boolean = true): List<User>
@@ -20,7 +21,7 @@ interface UserRepository : JpaRepositoryImplementation<User, Long> {
     @Query("SELECT u FROM User u WHERE (u.username = ?1 OR u.email = ?1) AND u.status = true")
     fun findByIdentifier(identifier: String): User?
 
-    @Query("SELECT u FROM User u WHERE (u.username IN ?1 OR u.email IN ?1) AND u.status = true")
+    @Query("SELECT u FROM User u WHERE u.username IN ?1 OR u.email IN ?1")
     fun findByIdentifierList(identifierList: List<String>): List<User>
 
     @Query("SELECT u FROM User u WHERE u.email = ?1 AND u.status = true")

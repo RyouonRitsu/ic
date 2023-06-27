@@ -49,6 +49,7 @@ class InvalidateStatus(
     override fun run() {
         log.info("================================ Running InvalidateStatus ================================")
         val allRentalInfos = rentalInfoRepository.findAllByStatus()
+        val allUsers = userRepository.findAllByStatus().associateBy { it.id }
         val now = LocalDate.now()
         val invalidRentalInfos = mutableListOf<RentalInfo>()
         val invalidPaymentInfos = mutableListOf<PaymentInfo>()
@@ -58,6 +59,13 @@ class InvalidateStatus(
         val invalidInvitationCode = mutableListOf<InvitationCode>()
         val changedUsers = mutableMapOf<Long, User>()
         val availableRooms = mutableListOf<Room>()
+
+        allUsers.forEach { (id, user) ->
+            if (user.rentalInfoIds.parseArray().isEmpty()
+                && user.userType == User.UserType.CLIENT()
+            ) changedUsers[id] = user.apply { status = false }
+        }
+
         allRentalInfos.forEach {
             if (!now.isAfter(it.endTime)) return@forEach
 
@@ -81,7 +89,7 @@ class InvalidateStatus(
 
             // change user
             val user = changedUsers[it.userId]
-                ?: userRepository.findByIdAndStatus(it.userId)
+                ?: allUsers[it.userId]
                 ?: return@forEach
             user.paymentInfoIds = run {
                 val ids = user.paymentInfoIds.parseArray<Long>()

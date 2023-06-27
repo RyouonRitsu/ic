@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface RoomRepository : JpaRepositoryImplementation<Room, Long> {
+    fun findAllByUserId(userId: Long): List<Room>
 }
