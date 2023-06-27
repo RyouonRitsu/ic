@@ -292,6 +292,12 @@ class MROServiceImpl(
             val mroList = mroRepository.findAll(specification)
                 .groupBy { it.createTime.month }
                 .mapValues { it.value.groupBy { it.label }.mapValues { it.value.size } }
+                .toMutableMap()
+            for (i in Month.values()) {
+                if (!mroList.containsKey(i)) {
+                    mroList[i] = mapOf("null" to 0)
+                }
+            }
             Response.success<Map<Month, Map<String, Int>>>("查询成功", mroList)
         }.onFailure {
             if (it is NoSuchElementException) {
