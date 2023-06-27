@@ -17,17 +17,20 @@ class EmailController {
     }
 
     @RequestMapping("/forgot_password")
-    fun forgotPassword(@RequestParam("verification_code") email: String, model: Model): String {
-        model.addAttribute("verification_code", email)
+    fun forgotPassword(
+        @RequestParam("verificationCode") verificationCode: String,
+        model: Model
+    ): String {
+        model.addAttribute("verification_code", verificationCode)
         return "forgot_password"
     }
 
     @RequestMapping("/registration_verification")
     fun registrationVerification(
-        @RequestParam("verification_code") email: String,
+        @RequestParam("verificationCode") verificationCode: String,
         model: Model
     ): String {
-        model.addAttribute("verification_code", email)
+        model.addAttribute("verification_code", verificationCode)
         return "registration_verification"
     }
 }

@@ -63,13 +63,15 @@ class VisitorVerify(
                     val checkDateTime = it.visitTime.minusMinutes(ICConstant.LONG_30)
                     log.info("[VisitorVerify] inaccessible expiredDateTime is $expiredDateTime, checkDateTime is $checkDateTime")
                     if (expiredDateTime.equalsIgnoreSecond(now) || expiredDateTime.isBefore(now)) {
+                        log.info("[VisitorVerify] now is $now, expiredDateTime is $expiredDateTime, set [${it.id}] to expired")
                         setExpired(it)
                         return@forEach
                     }
 
                     if (!checkDateTime.equalsIgnoreSecond(now)) return@forEach
 
-                    threadPoolTaskExecutor.submit {
+                    log.info("[VisitorVerify] preparing to send sms to ${it.phoneNumber}")
+                    val f = threadPoolTaskExecutor.submitListenable {
                         val verificationCode = (1..6).joinToString("") { "${(0..9).random()}" }
                         val success = smsService.sendVerifyCodeSms(it.phoneNumber, verificationCode)
                         if (success) {
@@ -83,6 +85,12 @@ class VisitorVerify(
                             }
                         } else setExpired(it)
                     }
+                    f.addCallback(
+                        { _ -> log.info("[VisitorVerify] sms send to ${it.phoneNumber} successful!") },
+                        { e ->
+                            log.error("[VisitorVerify] sms send to ${it.phoneNumber} failed!", e)
+                        }
+                    )
                 }
 
                 Visitor.VisitStatus.ACCESSIBLE -> {
@@ -91,10 +99,18 @@ class VisitorVerify(
                     log.info("[VisitorVerify] accessible checkDateTime is $checkDateTime")
                     if (now.isBefore(checkDateTime)) return@forEach
 
-                    threadPoolTaskExecutor.submit {
+                    log.info("[VisitorVerify] preparing to set [${it.id}] to expired")
+                    val f = threadPoolTaskExecutor.submitListenable {
                         redisUtils - it.phoneNumber
+                        log.info("[VisitorVerify] now is $now, expiredDateTime is $checkDateTime, set [${it.id}] to expired")
                         setExpired(it)
                     }
+                    f.addCallback(
+                        { _ -> log.info("[VisitorVerify] set [${it.id}] to expired successful!") },
+                        { e ->
+                            log.error("[VisitorVerify] set [${it.id}] to expired failed!", e)
+                        }
+                    )
                 }
 
                 else -> return@forEach
